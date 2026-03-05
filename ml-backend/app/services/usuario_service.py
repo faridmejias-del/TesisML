@@ -11,7 +11,6 @@ class UsuarioService:
         rol = db.query(Rol).filter(Rol.IdRol == rol_id).first()
         if not rol:
             raise InvalidDataError("El rol especificado no existe")
-        return rol
     
     @staticmethod
     def _validar_email_unico(db: Session, email: str, usuario_id: int = None) -> None:
@@ -27,14 +26,21 @@ class UsuarioService:
         pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
         if not re.match(pattern, email):
             raise InvalidDataError("El formato del email es inválido")
-        return True
     
     @staticmethod
+    def validar_largo_password(password: str) -> None:
+        if len(password) < 6 or len(password) > 12:
+            raise InvalidDataError("La contraseña debe tener entre 6 y 12 caracteres")
+
+    @staticmethod
     def crear_usuario(db: Session, usuario: UsuarioCreate) -> Usuario:
-        # Validaciones
+        # Validaciones (lanzan excepciones si fallan)
         UsuarioService.validar_formato_email(usuario.Email)
         UsuarioService._validar_email_unico(db, usuario.Email)
         UsuarioService._validar_rol_existe(db, usuario.IdRol)
+        
+        # Validar longitud de contraseña ANTES de hashearla
+        UsuarioService.validar_largo_password(usuario.PasswordU)
         
         # Crear usuario con contraseña hasheada
         db_usuario = Usuario(
@@ -91,6 +97,8 @@ class UsuarioService:
         
         # Hashear contraseña si se proporciona nueva
         if usuario_update.PasswordU:
+            # Validar longitud de contraseña ANTES de hashearla
+            UsuarioService.validar_largo_password(usuario_update.PasswordU)
             db_usuario.PasswordU = hash_password(usuario_update.PasswordU)
         
         db.commit()

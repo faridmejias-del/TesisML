@@ -1,0 +1,42 @@
+Ticker Yahoo Finance,Nombre Empresa,Sectores
+MSFT,Microsoft,Tecnologia
+AAPL,Apple,Tecnologia
+GOOGL,Google,Tecnologia
+NVDA,Nvidia,Tecnologia
+META,Meta,Tecnologia
+INTC,Intel,Tecnologia
+AMD,Advanced Micro Devices,Tecnologia
+TSLA,Tesla,Tecnologia
+JPM,JPMorgan Chase,Finanzas
+V,Visa,Finanzas
+MA,Mastercard,Finanzas
+GS,Goldman Sachs,Finanzas
+PYPL,PayPal,Finanzas
+BRK-B,Berkshire Hathaway,Finanzas
+JNJ,Johnson & Johnson,Salud
+UNH,UnitedHealth Group,Salud
+PFE,Pfizer,Salud
+LLY,Eli Lilly,Salud
+ABBV,AbbVie,Salud
+XOM,Exxon Mobil,Energia
+CVX,Chevron,Energia
+NEE,NextEra Energy,Energia
+FCX ,Freeport-McMoRan,Energia
+KO,CocaCola,Consumo Masivo
+PG,Procter & Gamble,Consumo Masivo
+WMT,Walmart,Consumo Masivo
+AMZN,Amazon,Consumo Masivo
+DIS,Disney,Consumo Masivo
+SBUX,Starbucks,Consumo Masivo
+NKE,Nike,Consumo Masivo
+HD,Home Depot,Consumo Masivo
+COST,Costco Wholesale,Consumo Masivo
+CAT,Caterpillar,Industriales y Aeroespaciales
+BA,Boeing,Industriales y Aeroespaciales
+GE,General Electric,Industriales y Aeroespaciales
+HON,Honeywell,Industriales y Aeroespaciales
+LMT,Lockheed Martin,Industriales y Aeroespaciales
+SPY,S&P 500 ETF Trust,ETF
+VOO,Vanguard S&P 500 ETF,ETF
+QQQ,Invesco QQQ Trust (Nasdaq 100),ETF
+NFLX,Netflix,Tecnologia

@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.models import Portafolio, Empresa, Usuario
 from app.schemas.schemas import PortafolioCreate, PortafolioUpdate
 from app.exceptions import ResourceNotFoundError, InvalidDataError, DuplicateResourceError
-from app.utils import obtener_hora_formateada as HoraFormat
+from app.utils.horaformateada import obtener_hora_formateada as HoraFormat
 
 class PortafolioService:
     @staticmethod

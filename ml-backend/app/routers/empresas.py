@@ -39,6 +39,10 @@ def obtener_empresa(empresa_id: int, db: Session = Depends(get_db)):
     except ResourceNotFoundError as e:
         raise HTTPException(status_code=404, detail=e.message)
 
+@router.get("/activas", response_model=list[EmpresaOut])
+def obtener_empresas_activas(db: Session = Depends(get_db)):
+    return EmpresaService.obtener_empresas_activas(db)
+
 
 @router.put("/{empresa_id}", response_model=EmpresaOut)
 def actualizar_empresa(empresa_id: int, empresa_data: EmpresaUpdate, db: Session = Depends(get_db)):
@@ -56,10 +60,10 @@ def actualizar_empresa(empresa_id: int, empresa_data: EmpresaUpdate, db: Session
 
 
 @router.delete("/{empresa_id}")
-def eliminar_empresa(empresa_id: int, db: Session = Depends(get_db)):
-    """Elimina una empresa."""
+def desactivar_empresa(empresa_id: int, db: Session = Depends(get_db)):
+    """Desactiva una empresa."""
     try:
-        return EmpresaService.eliminar_empresa(db, empresa_id)
+        return EmpresaService.desactivar_empresa(db, empresa_id)
     except ResourceNotFoundError as e:
         raise HTTPException(status_code=404, detail=e.message)
     except Exception as e:

@@ -11,7 +11,7 @@ class Empresa(Base):
     IdSector = Column(Integer, ForeignKey("Sector.IdSector"))
     FechaAgregado = Column(DateTime)
 
-    activo = Column(Boolean, default = True)
+    Activo = Column(Boolean, default = True)
     FechaActualizacion = Column(DateTime)
 
     sector = relationship("Sector", back_populates="empresas")

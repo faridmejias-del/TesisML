@@ -3,8 +3,10 @@ Esquemas Pydantic para validación de datos.
 Define las estructuras de entrada y salida para los endpoints.
 """
 
+from decimal import Decimal
+
 from pydantic import Field, computed_field, ConfigDict, BaseModel
-from datetime import datetime
+from datetime import datetime, date
 from typing import Optional, List
 
 # ========================= SECTOR SCHEMAS =========================
@@ -22,6 +24,7 @@ class SectorCreate(SectorBase):
 class SectorUpdate(BaseModel):
     """Esquema para actualizar un sector."""
     NombreSector: Optional[str] = Field(None, min_length=1, max_length=50, description="Nombre del sector")
+    Activo: Optional[bool] = Field(None, description="Indica si el sector está activo o no")
 
     model_config = {"from_attributes": True}
 
@@ -33,6 +36,7 @@ class SectorOut(SectorBase):
     """Esquema de salida para un sector."""
     IdSector: int = Field(..., description="ID único del sector")
     NombreSector: str = Field(..., description="Nombre del sector")
+    Activo: bool = Field(..., description="Indica si el sector esta activo")
 
     model_config = {"from_attributes": True}
 
@@ -56,6 +60,7 @@ class EmpresaUpdate(BaseModel):
     Ticket: Optional[str] = Field(None, min_length=1, max_length=10, description="Símbolo del ticker")
     NombreEmpresa: Optional[str] = Field(None, min_length=1, max_length=100, description="Nombre de la empresa")
     IdSector: Optional[int] = Field(None, description="ID del sector")
+    Activo: Optional[bool] = Field(None, description = "Indica si la empresa esta activa")
 
     model_config = {"from_attributes": True}
 
@@ -106,21 +111,21 @@ class UsuarioCreate(UsuarioBase):
     pass
 
 class UsuarioUpdate(BaseModel):
-    Email: Optional[str] = Field(None, min_length=1, max_length=100, description="Correo electronico del usuario")
-    PasswordU: Optional[str] = Field(None, min_length=1, max_length=72, description="Password del usuario (máx 72 caracteres)")
-    IdRol: Optional[int] = Field(None, description="Id del rol del usuario")
+    Nombre: Optional[str] = None
+    Apellido: Optional[str] = None
+    Email: Optional[str] = None
+    PasswordU: Optional[str] = Field(None, min_length=8, alias="PasswordU")
+    IdRol: Optional[int] = None
+    Activo: Optional[bool] = None
+
+class UsuarioOut(UsuarioBase):
+    IdUsuario: int
+    Activo: bool
+    FechaCreacion: datetime
+    UltimoLogin: Optional[datetime] = None
+    IntentosFallidos: int
     
-    model_config = {"from_attributes": True}
-
-class UsuarioOut(BaseModel):
-    IdUsuario: int = Field(..., description="Id unico del usuario")
-    Nombre: str = Field(..., description="Nombre del usuario")
-    Apellido: str = Field(..., description="Apellido del usuario")
-    Email: str = Field(..., description="Correo electronico del usuario")
-    IdRol: int = Field(..., description="Id del rol del usuario")
-
-    model_config = {"from_attributes": True}
-
+    rol: Optional[RolOut] = None
 # ========================= Portafolio SCHEMAS =========================
 
 class PortafolioBase(BaseModel):
@@ -146,3 +151,19 @@ class PortafolioOut(BaseModel):
     IdPortafolio: int = Field(..., description="Id unico del portafolio")
 
     model_config = {"from_attributes": True}
+
+
+# ========================= PRECIO HISTORICO SCHEMAS =========================
+
+class PrecioHistoricoBase(BaseModel):
+    Fecha: datetime = Field(..., description = "Fecha del precio historico")
+    PrecioCierre: Decimal = Field(..., description= "Precio de cierre de la empresa")
+    Volumen: int = Field(..., description= "Volumen de transaccion")
+
+class PrecioHistoricoCreate(PrecioHistoricoBase):
+    pass
+
+
+class PrecioHistoricoOut(BaseModel):
+    IdPrecioHistorico: int = Field(..., description="Id unico del precio historico")
+    IdEmpresa: int = Field(..., description="Id de la empresa a la que pertenece el precio historico")

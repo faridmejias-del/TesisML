@@ -43,7 +43,10 @@ def obtener_empresas_por_sector(sector_id: int, db: Session = Depends(get_db)):
         return SectorService.obtener_empresas_por_sector(db, sector_id)
     except ResourceNotFoundError as e:
         raise HTTPException(status_code=404, detail=e.message)
-
+    
+@router.get("/activos", response_model=list[SectorOut])
+def obtener_sectores_activos(db: Session = Depends(get_db)):
+    return SectorService.obtener_sector_activos(db)
 
 @router.put("/{sector_id}", response_model=SectorOut)
 def actualizar_sector(sector_id: int, sector_data: SectorUpdate, db: Session = Depends(get_db)):

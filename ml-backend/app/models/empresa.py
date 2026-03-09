@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DECIMAL, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, String, DECIMAL, ForeignKey, DateTime, Boolean
 from sqlalchemy.orm import relationship
 from app.db.sessions import Base
 
@@ -10,6 +10,9 @@ class Empresa(Base):
     NombreEmpresa = Column(String(100), nullable=False)
     IdSector = Column(Integer, ForeignKey("Sector.IdSector"))
     FechaAgregado = Column(DateTime)
+
+    activo = Column(Boolean, default = True)
+    FechaActualizacion = Column(DateTime)
 
     sector = relationship("Sector", back_populates="empresas")
     resultados = relationship("Resultado", back_populates="empresa")

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, DateTime
 from sqlalchemy.orm import relationship
 from app.db.sessions import Base
 
@@ -11,6 +11,11 @@ class Usuario(Base):
     Email = Column(String(100), unique=True, nullable=False)
     PasswordU = Column(String(255), nullable=False)
     IdRol = Column(Integer, ForeignKey("Rol.IdRol"))
+
+    Activo = Column(Boolean, default=True)
+    FechaCreacion = Column(DateTime)
+    UltimoLogin = Column(DateTime)
+    IntentosFallidos = Column(Integer, default=0)
 
     rol = relationship("Rol", back_populates="usuarios")
     portafolios = relationship("Portafolio", back_populates="usuario")

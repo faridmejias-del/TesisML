@@ -7,6 +7,7 @@ class Portafolio(Base):
     __tablename__ = "Portafolio"
     IdPortafolio = Column(Integer, primary_key=True, index=True)
     FechaAgregado = Column(String, nullable=False) 
+    #Estado = Column(String, nullable = False) #Activo, Inactivo)
     IdUsuario = Column(Integer, ForeignKey("Usuario.IdUsuario"))
     IdEmpresa = Column(Integer, ForeignKey("Empresa.IdEmpresa"))
 

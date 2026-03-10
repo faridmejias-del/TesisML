@@ -167,3 +167,30 @@ class PrecioHistoricoCreate(PrecioHistoricoBase):
 class PrecioHistoricoOut(BaseModel):
     IdPrecioHistorico: int = Field(..., description="Id unico del precio historico")
     IdEmpresa: int = Field(..., description="Id de la empresa a la que pertenece el precio historico")
+
+# # ========================= RESULTADO SCHEMAS =========================
+
+class ResultadoBase(BaseModel):
+    PrecioActual: Decimal = Field(..., description = "Precio actual de la accion al momento del analisis")
+    PrediccionIA: Decimal = Field(..., descripton="Precio predicho por el modelo")
+    VariacionPCT: Decimal = Field(..., description= "Variacion porcentual esperada")
+    RSI: Decimal = Field(..., description = "Relativa Strngth Index") #Indice de Fuerza Relativa
+    Score: Decimal = Field(..., description="Puntuacion general del analisis")
+    Recomendacion: str = Field(..., max_length=50, description="Recomendacion basada en el analisis")
+    IdEmpresa: int = Field(..., description="Id de la empresa a la que pertence la prediccion")
+    FechaAnalisis: Optional[datetime] = Field(None, description="fecha del analisis")
+
+class ResultadoCreate(ResultadoBase):
+    pass
+
+class ResultadoOut(BaseModel):
+    IdResultado: int = Field(..., description="Id del resultado")
+    PrecioActual: Decimal = Field(...,description="Precio actual")
+    PrediccionIA: Decimal = Field(..., description="Precio predicho por la IA")
+    RSI: Decimal = Field(..., description="Relative Strength Index")
+    Score: Decimal = Field(..., description="Puntuacion general del analisis")
+    Recomendacion: str = Field(..., description="Recomendacion")
+    IdEmpresa: int = Field(..., description="Id de la empresa a la que pertence")
+    FechaAnalisis: datetime = Field(..., description="Fecha del analisis")
+
+    model_config = {"from_attributes": True}

@@ -7,6 +7,11 @@ Directorio del proyecto
 2. cd ml-backend
 3. pip install -r requirement.txt
 
+## Instalar dependencias del frontend: 
+1. En consola:
+2. cd ml-frontend
+3. npm install (Instalara automaticamente todas las dependencias intaladas en package.json)
+
 ## Para ejecutar el Backend: 
 1. cd ml-backend
 2. uvicorn app.main:app --reload

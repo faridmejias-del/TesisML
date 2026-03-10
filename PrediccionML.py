@@ -13,20 +13,6 @@ import warnings
 import logging
 import gc
 
-
-"""def conectar_base_datos():
-    # Datos para la conexion del servidor SQL
-    servidor = 'VictusFabian'
-    base_datos = "AnalisisAcciones"
-    usuario = ''
-    password = ''
-    # Conexion
-    connection_bd = f"mssql+pyodbc://{usuario}:{password}@{servidor}/{base_datos}?driver=ODBC+Driver+17+for+SQL+Server"
-    engine = create_engine(connection_bd)
-    con = engine.connect()
-    return con"""
-
-
 # 1. CONFIGURACIÓN
 # -----------------------------------------------------------------------------
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'

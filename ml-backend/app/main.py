@@ -6,7 +6,7 @@ Punto de entrada de la aplicación con configuración centralizada.
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.routers import (sectors_router, empresas_router,rols_router, usuarios_router, portafolios_router)
+from app.routers import (sectors_router, empresas_router,rols_router, usuarios_router, portafolios_router, precio_historico_router)
 
 # Crear aplicación FastAPI
 app = FastAPI(
@@ -30,6 +30,7 @@ app.include_router(empresas_router)
 app.include_router(rols_router)
 app.include_router(usuarios_router)
 app.include_router(portafolios_router)
+app.include_router(precio_historico_router)
 
 
 @app.get("/")

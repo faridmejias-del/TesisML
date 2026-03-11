@@ -22,7 +22,7 @@ class ResultadoService:
             Recomendacion = data_ml['recomendacion']
         )
         db.add(nuevo_resultado)
-        db.commit
+        db.commit()
     @staticmethod
     def obtener_todos_resultados(db: Session) -> list[Resultado]:
         return db.query(Resultado).order_by(desc(Resultado.FechaAnalisis)).all()

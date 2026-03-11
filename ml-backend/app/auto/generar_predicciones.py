@@ -12,7 +12,7 @@ def ejecutar_analisis_diario():
     empresas = db.query(Empresa).filter(Empresa.Activo == True).all()
 
     for empresa in empresas: 
-        #Ultimos precios para calcular
+        # Últimos precios para calcular
         precios = db.query(PrecioHistorico).filter(
             PrecioHistorico.IdEmpresa == empresa.IdEmpresa
         ).order_by(PrecioHistorico.Fecha.desc()).limit(100).all()
@@ -26,14 +26,22 @@ def ejecutar_analisis_diario():
             'Low': float(p.PrecioCierre)
         } for p in reversed(precios)])
 
-        #Proecesado y prediccion 
-        features = ml.preparar_features(df)
-        prediccion_data = ml.predecir(features)
+        # Procesado y predicción (todo en un solo paso)
+        prediccion_data = ml.predecir(df)
+        
+        if prediccion_data is None:
+            print(f"⚠️ Datos insuficientes en DataFrame procesado para {empresa.NombreEmpresa}")
+            continue
 
-        #Guardar resultados
-        ResultadoService.guardar_prediccion(db, empresa.IdEmpresa, prediccion_data, features)
-        print(f"Analisis completado para {empresa.NombreEmpresa}")
+        # Extraemos los features del resultado
+        features = prediccion_data['features']
+
+        # Guardar resultados
+        try:
+            ResultadoService.guardar_prediccion(db, empresa.IdEmpresa, prediccion_data, features)
+            print(f"✅ Análisis completado para {empresa.NombreEmpresa}")
+        except Exception as e:
+            print(f"❌ Error al guardar en BD para {empresa.NombreEmpresa}: {e}")
 
 if __name__ == "__main__":
     ejecutar_analisis_diario()
-

@@ -30,6 +30,10 @@ def obtener_empresas(db: Session = Depends(get_db)):
     """Obtiene todas las empresas."""
     return EmpresaService.obtener_todas_empresas(db)
 
+@router.get("/activas", response_model=list[EmpresaOut])
+def obtener_empresas_activas(db: Session = Depends(get_db)):
+    return EmpresaService.obtener_empresas_activas(db)
+
 
 @router.get("/{empresa_id}", response_model=EmpresaOut)
 def obtener_empresa(empresa_id: int, db: Session = Depends(get_db)):
@@ -38,10 +42,6 @@ def obtener_empresa(empresa_id: int, db: Session = Depends(get_db)):
         return EmpresaService.obtener_empresa_por_id(db, empresa_id)
     except ResourceNotFoundError as e:
         raise HTTPException(status_code=404, detail=e.message)
-
-@router.get("/activas", response_model=list[EmpresaOut])
-def obtener_empresas_activas(db: Session = Depends(get_db)):
-    return EmpresaService.obtener_empresas_activas(db)
 
 
 @router.put("/{empresa_id}", response_model=EmpresaOut)

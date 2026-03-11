@@ -25,16 +25,9 @@ ALTER TABLE Usuario ADD
     IntentosFallidos INT DEFAULT 0;
 
 
-UPDATE Empresa
-SET 
-    Activo = 1, 
-    FechaActualizacion = SYSUTCDATETIME();
-
-Select * from sector;
-
-UPDATE Sector
-SET 
-    Activo = 1, 
-    FechaCreacion = SYSUTCDATETIME();
-
+ALTER TABLE Resultado ADD 
+    MACD DECIMAL(18, 4),
+    ATR DECIMAL(18, 4),
+    EMA20 DECIMAL(18, 4),
+    EMA50 DECIMAL(18, 4);
 

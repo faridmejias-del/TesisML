@@ -20,34 +20,14 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 logging.getLogger('tensorflow').setLevel(logging.ERROR)
 warnings.filterwarnings("ignore")
 
+# SQ 	Block	Ecommerce
 DIAS_MEMORIA_IA = 60
 PORTAFOLIO = [
-    'MSFT', 'AAPL', 'TSLA', 'AMZN', 'GOOGL', 'NVDA', 'META', 'NFLX', 'INTC', 'AMD', 'KO',
-    'JPM', 'V', 'JNJ', 'UNH', 'PG', 'WMT', 'XOM', 'CAT', 'DIS', 'SPY'
+    'MSFT'
 ]
 
 NOMBRES = {
-    'MSFT': 'Microsoft', 
-    'AAPL': 'Apple', 
-    'TSLA': 'Tesla', 
-    'AMZN': 'Amazon',
-    'GOOGL': 'Google', 
-    'NVDA': 'NVIDIA', 
-    'META': 'Meta', 
-    'NFLX': 'Netflix',
-    'INTC': 'Intel', 
-    'AMD': 'AMD', 
-    'KO': 'Coca-Cola',
-    'JPM': 'JPMorgan', 
-    'V': 'Visa', 
-    'JNJ': 'Johnson & Johnson', 
-    'UNH': 'UnitedHealth', 
-    'PG': 'Procter & Gamble', 
-    'WMT': 'Walmart', 
-    'XOM': 'Exxon Mobil', 
-    'CAT': 'Caterpillar', 
-    'DIS': 'Disney', 
-    'SPY': 'S&P 500 ETF (SPY)'
+    'MSFT': 'Microsoft'
 }
 
 # 2. OPTIMIZACIÓN: CÁLCULO VECTORIZADO DE INDICADORES

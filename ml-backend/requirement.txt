@@ -4,7 +4,8 @@ pydantic-settings
 python-dotenv
 sqlalchemy         
 pyodbc             
-pandas             
+pandas    
+pandas_ta         
 yfinance           
 scikit-learn
 numpy

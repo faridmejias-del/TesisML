@@ -1,13 +1,6 @@
 use AnalisisAcciones;
 
-select * from Rol;
-
-Select * from Sector;
-
-select * from Usuario;
-
-select * from Empresa;
-
+-- Cantidad de Registros por empresa 
 SELECT 
     e.IdEmpresa,
     e.NombreEmpresa,

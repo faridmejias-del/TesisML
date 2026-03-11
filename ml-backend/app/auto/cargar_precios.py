@@ -18,7 +18,7 @@ def poblar_precios_historicos():
             print(f"Descargando: {empresa.Ticket}...")
             
             # 2. Descargar datos de Yahoo Finance (últimos 6 años)
-            ticker_data = yf.download(empresa.Ticket, period="6y", interval="1d")
+            ticker_data = yf.download(empresa.Ticket, period="max", interval="1d")
             
             for fecha, fila in ticker_data.iterrows():
                 # Evitar duplicados (opcional pero recomendado)

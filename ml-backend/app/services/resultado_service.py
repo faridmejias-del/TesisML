@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 from app.models.resultado import Resultado
+from datetime import datetime
 
 from app.exceptions import ResourceNotFoundError
 
@@ -19,7 +20,8 @@ class ResultadoService:
             EMA20 = features['EMA20'],
             EMA50 = features['EMA50'],
             Score = data_ml['score'],
-            Recomendacion = data_ml['recomendacion']
+            Recomendacion = data_ml['recomendacion'],
+            FechaAnalisis = datetime.utcnow()
         )
         db.add(nuevo_resultado)
         db.commit()

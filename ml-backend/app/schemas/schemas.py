@@ -196,6 +196,6 @@ class ResultadoOut(BaseModel):
     Score: Decimal = Field(..., description="Puntuacion general del analisis")
     Recomendacion: str = Field(..., description="Recomendacion")
     IdEmpresa: int = Field(..., description="Id de la empresa a la que pertence")
-    FechaAnalisis: datetime = Field(..., description="Fecha del analisis")
+    FechaAnalisis: Optional[datetime] = Field(..., description="Fecha del analisis")
 
     model_config = {"from_attributes": True}

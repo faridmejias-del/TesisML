@@ -177,6 +177,10 @@ class ResultadoBase(BaseModel):
     VariacionPCT: Decimal = Field(..., description= "Variacion porcentual esperada")
     RSI: Decimal = Field(..., description = "Relativa Strngth Index") #Indice de Fuerza Relativa
     Score: Decimal = Field(..., description="Puntuacion general del analisis")
+    MACD: Decimal = None
+    ATR: Decimal = None
+    EMA20: Decimal = None
+    EMA50: Decimal = None
     Recomendacion: str = Field(..., max_length=50, description="Recomendacion basada en el analisis")
     IdEmpresa: int = Field(..., description="Id de la empresa a la que pertence la prediccion")
     FechaAnalisis: Optional[datetime] = Field(None, description="fecha del analisis")

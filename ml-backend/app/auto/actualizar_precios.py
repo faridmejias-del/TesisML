@@ -6,55 +6,65 @@ from app.models.empresa import Empresa
 from app.models.precio_historico import PrecioHistorico
 from datetime import datetime, timedelta
 
-# Para ejecutar este archivo: python -m app.auto.cargar_precios
+#Ejectur: python -m app.auto.actualizar_precios
 
-def poblar_precios_historicos():
+def actualizar_precios():
     db = SessionLocal()
     try:
-        # 1. Obtener todas las empresas activas
         empresas = db.query(Empresa).filter(Empresa.Activo == True).all()
         print(f"🚀 Iniciando actualización para {len(empresas)} empresas...")
 
         for empresa in empresas:
-            # 2. Buscar la última fecha registrada para esta empresa
+            # 1. Buscar la última fecha registrada
             ultima_fecha = db.query(func.max(PrecioHistorico.Fecha)).filter(
                 PrecioHistorico.IdEmpresa == empresa.IdEmpresa
             ).scalar()
 
+            # 2. Configurar la descarga
             if ultima_fecha:
-                # Si hay datos, empezamos desde el día siguiente a la última fecha
                 fecha_inicio = ultima_fecha + timedelta(days=1)
-                
-                # Si la última fecha es hoy, saltamos la empresa
                 if fecha_inicio >= datetime.now().date():
-                    print(f"⏩ {empresa.Ticket} ya está actualizado hasta hoy.")
+                    print(f"⏩ {empresa.Ticket} ya está actualizado.")
                     continue
-                
                 print(f"🔄 Actualizando {empresa.Ticket} desde {fecha_inicio}...")
-                ticker_data = yf.download(empresa.Ticket, start=fecha_inicio, interval="1d")
+                # Usamos auto_adjust=True para evitar el Warning de yfinance
+                ticker_data = yf.download(empresa.Ticket, start=fecha_inicio, interval="1d", auto_adjust=True)
             else:
-                # Si la tabla está vacía para esta empresa, descargamos el histórico completo
-                print(f"📥 Descargando histórico completo (6y) para {empresa.Ticket}...")
-                ticker_data = yf.download(empresa.Ticket, period="max", interval="1d")
+                print(f"📥 Descargando histórico (max) para {empresa.Ticket}...")
+                ticker_data = yf.download(empresa.Ticket, period="max", interval="1d", auto_adjust=True)
 
-            # 3. Insertar nuevos datos si existen
+            # 3. Procesar datos (Aquí está la corrección del error)
             if not ticker_data.empty:
                 nuevos_registros = 0
                 for fecha, fila in ticker_data.iterrows():
-                    # Validación de seguridad extra por si yfinance devuelve el último día duplicado
-                    nuevo_precio = PrecioHistorico(
-                        IdEmpresa=empresa.IdEmpresa,
-                        Fecha=fecha.date(),
-                        PrecioCierre=float(fila['Close']),
-                        Volumen=int(fila['Volume'])
-                    )
-                    db.add(nuevo_precio)
-                    nuevos_registros += 1
+                    try:
+                        # CORRECCIÓN: Usamos .item() o el acceso directo para asegurar un valor escalar
+                        # En versiones nuevas de yfinance, 'Close' puede ser un MultiIndex
+                        precio_val = fila['Close']
+                        volumen_val = fila['Volume']
+
+                        # Si es una Serie (debido al MultiIndex), extraemos el primer valor
+                        if hasattr(precio_val, 'iloc'):
+                            precio_val = precio_val.iloc[0]
+                        if hasattr(volumen_val, 'iloc'):
+                            volumen_val = volumen_val.iloc[0]
+
+                        nuevo_precio = PrecioHistorico(
+                            IdEmpresa=empresa.IdEmpresa,
+                            Fecha=fecha.date(),
+                            PrecioCierre=float(precio_val),
+                            Volumen=int(volumen_val)
+                        )
+                        db.add(nuevo_precio)
+                        nuevos_registros += 1
+                    except Exception as e:
+                        print(f"⚠️ Error en fila {fecha} para {empresa.Ticket}: {e}")
+                        continue
                 
                 db.commit()
-                print(f"✅ {empresa.Ticket}: {nuevos_registros} registros nuevos añadidos.")
+                print(f"✅ {empresa.Ticket}: {nuevos_registros} registros nuevos.")
             else:
-                print(f"ℹ️ {empresa.Ticket}: Sin datos nuevos para descargar.")
+                print(f"ℹ️ {empresa.Ticket}: No se encontraron datos.")
 
     except Exception as e:
         print(f"❌ Error crítico: {e}")
@@ -63,4 +73,4 @@ def poblar_precios_historicos():
         db.close()
 
 if __name__ == "__main__":
-    poblar_precios_historicos()
+    actualizar_precios()

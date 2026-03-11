@@ -1,102 +1,92 @@
 // src/App.js
-
-import React, { useState } from 'react';
+import React, { useState } from 'react'; // Importamos useState para la interacción
+import AuthForm from './components/AuthForm'; 
+import SectorList from './components/SectorList';
+import EmpresaTable from './components/EmpresaTable';
+import RolList from './components/RolList';
+import PrecioChart from './components/PrecioChart';
+import ResultadoPanel from './components/ResultadoPanel';
 
 function App() {
-  // 1. Estado para saber si estamos en Login (true) o Registro (false)
-  const [esLogin, setEsLogin] = useState(true);
+  // Estado para capturar qué empresa seleccionamos
+  const [empresaSeleccionada, setEmpresaSeleccionada] = useState({ id: null, nombre: "" });
 
-  // 2. Estados para capturar lo que el usuario escribe
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [nombre, setNombre] = useState(''); // Solo para registro
-
-  // 3. Función que se ejecuta al hacer clic en el botón principal
-  const manejarEnvio = (e) => {
-    e.preventDefault(); // Evita que la página se recargue
-    if (esLogin) {
-      console.log("Intentando iniciar sesión con:", { email, password });
-      alert("Simulación: Iniciando sesión...");
-    } else {
-      console.log("Intentando registrar a:", { nombre, email, password });
-      alert("Simulación: Registrando usuario...");
-    }
+  // Función para manejar la selección (se la pasaremos a la tabla)
+  const manejarSeleccionEmpresa = (id, nombre) => {
+    setEmpresaSeleccionada({ id, nombre });
   };
 
   return (
-    <div style={estilos.contenedor}>
-      <div style={estilos.tarjeta}>
-        <h2>{esLogin ? 'Iniciar Sesión' : 'Crear Cuenta'}</h2>
-        <p style={estilos.subtitulo}>
-          {esLogin ? 'Bienvenido de nuevo al panel ML' : 'Regístrate para gestionar stock'}
-        </p>{/*modificar para cuano quiera cambiar el titulo de inicio o registro*/}
+    <div style={estilos.layout}>
+      <header style={estilos.header}>
+        <h1>Plataforma ML - Análisis Financiero</h1>
+      </header>
+      
+      <main style={estilos.contenido}>
+        <AuthForm />
 
-        <form onSubmit={manejarEnvio} style={estilos.formulario}>
-          
-          {/* CAMPO DINÁMICO: Solo se muestra si NO es login (es decir, es registro) */}
-          {!esLogin && (
-            <div style={estilos.grupo}>
-              <label>Nombre Completo</label>
-              <input 
-                type="text" 
-                placeholder="Tu nombre" 
-                value={nombre}
-                onChange={(e) => setNombre(e.target.value)}
-                style={estilos.input}
-              />
+        <div style={estilos.seccionMaestras}>
+          <div style={{ flex: 1 }}><SectorList /></div>
+          <div style={{ flex: 1 }}><RolList /></div>
+        </div>
+
+        <div style={estilos.seccionAnalisis}>
+            <div style={{ flex: 3 }}>
+                <PrecioChart 
+                    empresaId={empresaSeleccionada.id} 
+                    nombreEmpresa={empresaSeleccionada.nombre} 
+                />
             </div>
-          )}
-
-          <div style={estilos.grupo}>
-            <label>Correo Electrónico</label>
-            <input 
-              type="email" 
-              placeholder="correo@ejemplo.com" 
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              style={estilos.input}
-              required
-            />
-          </div>
-
-          <div style={estilos.grupo}>
-            <label>Contraseña</label>
-            <input 
-              type="password" 
-              placeholder="******" 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              style={estilos.input}
-              required
-            />
-          </div>
-
-          <button type="submit" style={estilos.botonPrincipal}>
-            {esLogin ? 'Entrar' : 'Registrarme'}
-          </button>
-        </form>
-
-        <button 
-          onClick={() => setEsLogin(!esLogin)} 
-          style={estilos.botonCambio}
-        >
-          {esLogin ? '¿No tienes cuenta? Regístrate aquí' : '¿Ya tienes cuenta? Inicia sesión'}
-        </button>
-      </div>
+            <div style={{ flex: 1 }}>
+                <ResultadoPanel empresaId={empresaSeleccionada.id} />
+            </div>
+        </div>
+        
+        <div style={estilos.seccionDatos}>
+          {/* Pasamos la función de selección como una 'prop' a la tabla */}
+          <EmpresaTable onSelect={manejarSeleccionEmpresa} />
+        </div>
+      </main>
     </div>
   );
 }
 
-// Estilos rápidos en JS para que se vea bien desde el inicio
 const estilos = {
-  contenedor: { display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#f0f2f5', fontFamily: 'sans-serif' },
-  tarjeta: { backgroundColor: 'white', padding: '2rem', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', width: '100%', maxWidth: '400px', textAlign: 'center' },
-  subtitulo: { color: '#666', marginBottom: '1.5rem' },
-  formulario: { display: 'flex', flexDirection: 'column', gap: '1rem', textAlign: 'left' },
-  grupo: { display: 'flex', flexDirection: 'column', gap: '0.5rem' },
-  input: { padding: '0.8rem', borderRadius: '4px', border: '1px solid #ccc', fontSize: '1rem' },
-  botonPrincipal: { backgroundColor: '#007bff', color: 'white', padding: '0.8rem', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '1rem', marginTop: '1rem' },
-  botonCambio: { background: 'none', border: 'none', color: '#007bff', marginTop: '1.5rem', cursor: 'pointer', textDecoration: 'underline' }
+  layout: { 
+    display: 'flex', 
+    flexDirection: 'column', 
+    alignItems: 'center', 
+    backgroundColor: '#f0f2f5', 
+    minHeight: '100vh',
+    paddingBottom: '3rem'
+  },
+  header: { padding: '1rem', color: '#333' },
+  contenido: { 
+    marginTop: '2rem',
+    display: 'flex', 
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '2rem',
+    width: '90%',        // Ocupa más ancho en pantallas grandes
+    maxWidth: '1200px'   // Pero con un tope para que no se deforme
+  },
+  seccionMaestras: { 
+    display: 'flex', 
+    gap: '20px', 
+    width: '100%',
+    flexWrap: 'wrap' 
+  },
+  seccionAnalisis: {
+      display: 'flex',
+      flexDirection: 'row', // Esto los pone al lado
+      gap: '20px',
+      width: '100%',
+      alignItems: 'flex-start',
+      flexWrap: 'wrap' // Para que en móviles se ponga uno abajo del otro
+  },
+  seccionDatos: { 
+    width: '100%' 
+  }
 };
 
 export default App;

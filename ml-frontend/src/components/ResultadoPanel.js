@@ -52,7 +52,7 @@ function ResultadoPanel({ empresaId }) {
     // Lógica visual para la recomendación
     const recomendacionTexto = resultado?.Recomendacion || "Sin datos";
     const esCompra = recomendacionTexto.toLowerCase().includes('alcista') || 
-                     recomendacionTexto.toLowerCase().includes('compra');
+                    recomendacionTexto.toLowerCase().includes('compra');
 
     return (
         <div style={estilos.panel}>
@@ -64,7 +64,7 @@ function ResultadoPanel({ empresaId }) {
                 <>
                     <div style={estilos.metrica}>
                         <span>Predicción IA:</span>
-                        <strong>${resultado.PrediccionIA.toFixed(2)}</strong>
+                        <strong>${Number(resultado.PrediccionIA || 0).toFixed(2)}</strong>
                     </div>
 
                     <div style={estilos.metrica}>

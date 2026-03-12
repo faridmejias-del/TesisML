@@ -9,8 +9,8 @@ function AdminPanel() {
         if (!window.confirm(`¿Seguro que deseas ${nombreTarea}?`)) return;
         setCargando(true);
         try {
-            const res = await funcion();
-            alert(res.message);
+            const response = await funcion();
+            alert(response.message);
         } catch (e) {
             alert("Error al ejecutar la tarea");
         } finally {

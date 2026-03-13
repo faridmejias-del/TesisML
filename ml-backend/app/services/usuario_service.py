@@ -46,13 +46,13 @@ class UsuarioService:
         UsuarioService.validar_formato_email(usuario.Email)
         UsuarioService._validar_email_unico(db, usuario.Email)
         UsuarioService._validar_rol_existe(db, usuario.IdRol)
-        UsuarioService.validar_largo_password(usuario.PasswordHash)
+        UsuarioService.validar_largo_password(usuario.PasswordU)
         
         db_usuario = Usuario(
             Nombre=usuario.Nombre,
             Apellido=usuario.Apellido,
             Email=usuario.Email,
-            PasswordHash=hash_password(usuario.PasswordHash),
+            PasswordHash=hash_password(usuario.PasswordU),
             IdRol=usuario.IdRol,
             Activo=True,                      # Nuevo campo
             FechaCreacion=datetime.utcnow(),  # Nuevo campo
@@ -99,8 +99,8 @@ class UsuarioService:
                 setattr(db_usuario, campo, valor)
         
         if usuario_update.PasswordHash:
-            UsuarioService.validar_largo_password(usuario_update.PasswordHash)
-            db_usuario.PasswordHash = hash_password(usuario_update.PasswordHash)
+            UsuarioService.validar_largo_password(usuario_update.PasswordU)
+            db_usuario.PasswordHash = hash_password(usuario_update.PasswordU)
         
         db.commit()
         db.refresh(db_usuario)
@@ -125,7 +125,7 @@ class UsuarioService:
             Usuario.Activo == True
         ).first()
         
-        if not usuario or not verify_password(password, usuario.PasswordHash):
+        if not usuario or not verify_password(password, usuario.PasswordU):
             # Aquí podrías implementar el incremento de IntentosFallidos si el usuario existe
             raise InvalidDataError("Credenciales inválidas o cuenta desactivada")
         

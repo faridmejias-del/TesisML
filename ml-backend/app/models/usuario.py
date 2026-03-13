@@ -15,8 +15,5 @@ class Usuario(Base):
 
     Activo = Column(Boolean, default=True)
     FechaCreacion = Column(DateTime, server_default=func.now())
-    UltimoLogin = Column(DateTime, server_default=func.now())
-    IntentosFallidos = Column(Integer, default=0)
-
     rol = relationship("Rol", back_populates="usuarios")
     portafolios = relationship("Portafolio", back_populates="usuario")

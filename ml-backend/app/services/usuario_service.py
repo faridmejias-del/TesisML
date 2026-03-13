@@ -52,11 +52,10 @@ class UsuarioService:
             Nombre=usuario.Nombre,
             Apellido=usuario.Apellido,
             Email=usuario.Email,
-            PasswordHash=hash_password(usuario.PasswordU),
+            PasswordU=hash_password(usuario.PasswordU),
             IdRol=usuario.IdRol,
             Activo=True,                      # Nuevo campo
             FechaCreacion=datetime.utcnow(),  # Nuevo campo
-            IntentosFallidos=0                # Nuevo campo
         )
         
         db.add(db_usuario)

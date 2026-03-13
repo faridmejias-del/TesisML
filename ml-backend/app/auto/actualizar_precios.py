@@ -10,8 +10,9 @@ def actualizar_precios(db: Session):
     
     for empresa in empresas:
         try:
+            
             # Descargamos los últimos datos (ej. últimos 5 días para asegurar)
-            data = yf.download(empresa.Ticket, period="5d", interval="1d")
+            data = yf.download(empresa.Ticket, period="max", interval="1d", auto_adjust=False)
             
             if not data.empty:
                 # Tomamos el último registro disponible

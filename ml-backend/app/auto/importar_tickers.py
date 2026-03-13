@@ -11,7 +11,6 @@ def importar_desde_csv(db: Session):
     csv_path = os.path.join(base_dir, "Tickers.csv")
     
     if not os.path.exists(csv_path):
-        print(f"❌ ERROR: No se encontró el archivo en: {csv_path}")
         return False
 
     try:
@@ -45,10 +44,8 @@ def importar_desde_csv(db: Session):
                 db.add(nueva_empresa)
         
         db.commit()
-        print("✅ Importación masiva completada exitosamente.")
         return True
 
     except Exception as e:
         db.rollback()
-        print(f"❌ Error durante la importación: {e}")
         raise e

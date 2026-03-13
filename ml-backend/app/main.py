@@ -13,7 +13,7 @@ from app.routers import (sectors_router,
 from app.db.sessions import engine, Base
 
 
-Base.metadata.create_all(bind=engine)
+# Base.metadata.create_all(bind=engine) ya cree la base de datos
 # Crear aplicación FastAPI
 app = FastAPI(
     title=settings.PROJECT_NAME,

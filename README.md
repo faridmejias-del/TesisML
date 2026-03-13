@@ -1,7 +1,3 @@
-Aquí tienes una propuesta completa y profesional para el archivo README.md principal de tu repositorio. Este documento no solo sirve como resumen de tu tesis, sino también como una guía práctica (y obligatoria en Ingeniería de Software) para que cualquier persona (o profesor) sepa cómo moverse, instalar y ejecutar el proyecto de principio a fin.
-
-Puedes copiar este contenido y guardarlo en el archivo README.md que está en la carpeta raíz (TesisML/README.md).
-
 Markdown
 # 📈 TesisML: Sistema de Predicción de Acciones con Machine Learning
 

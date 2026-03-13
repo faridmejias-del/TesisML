@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, DECIMAL, String, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from app.db.sessions import Base
-
+from sqlalchemy.sql import func
 
 class Resultado(Base):
     __tablename__ = "Resultado"
@@ -17,6 +17,6 @@ class Resultado(Base):
     EMA50 = Column(DECIMAL, nullable=False)
     Recomendacion = Column(String(50))
     IdEmpresa = Column(Integer, ForeignKey("Empresa.IdEmpresa"))
-    FechaAnalisis = Column(DateTime)
+    FechaAnalisis = Column(DateTime, server_default=func.now())
 
     empresa = relationship("Empresa", back_populates="resultados")

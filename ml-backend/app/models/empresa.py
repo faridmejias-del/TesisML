@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, DECIMAL, ForeignKey, DateTime, Boolean
 from sqlalchemy.orm import relationship
 from app.db.sessions import Base
+from sqlalchemy.sql import func
 
 
 class Empresa(Base):
@@ -9,7 +10,7 @@ class Empresa(Base):
     Ticket = Column(String(50), unique=True, nullable=False)
     NombreEmpresa = Column(String(100), nullable=False)
     IdSector = Column(Integer, ForeignKey("Sector.IdSector"))
-    FechaAgregado = Column(DateTime)
+    FechaAgregado = Column(DateTime, server_default=func.now())
 
     Activo = Column(Boolean, default = True)
     FechaActualizacion = Column(DateTime)

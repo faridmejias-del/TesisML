@@ -10,13 +10,18 @@ from app.routers import (sectors_router,
                         resultado_router,
                         ia_router,
                         admin_router)
+from app.db.sessions import engine, Base
 
+
+Base.metadata.create_all(bind=engine)
 # Crear aplicación FastAPI
 app = FastAPI(
     title=settings.PROJECT_NAME,
     description="API para predicción de precios de acciones usando ML",
-    version="1.0.0"
+    version="2.0.0"
 )
+
+
 
 # Configuración de CORS
 app.add_middleware(

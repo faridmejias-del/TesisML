@@ -1,3 +1,6 @@
+//boton para todas las empresas, al hacer click se ejecuta la IA y se muestra un mensaje de éxito o error. El botón se deshabilita mientras se ejecuta la IA para evitar múltiples clics.
+
+
 import React, { useState } from 'react';
 import iaService from '../services/iaService';
 

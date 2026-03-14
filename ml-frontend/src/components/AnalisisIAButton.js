@@ -1,21 +1,24 @@
-//boton para todas las empresas, al hacer click se ejecuta la IA y se muestra un mensaje de éxito o error. El botón se deshabilita mientras se ejecuta la IA para evitar múltiples clics.
-
-
+// ml-frontend/src/components/AnalisisIAButton.js
 import React, { useState } from 'react';
 import iaService from '../services/iaService';
 
-function AnalisisIAButton({ empresaId, onComplete }) {
+function AnalisisIAButton({ onComplete }) {
     const [ejecutando, setEjecutando] = useState(false);
 
-    const manejarEjecucionIA = async () => {
-        if (!empresaId) return alert("Selecciona una empresa");
+    const manejarEjecucionMasiva = async () => {
+        const confirmar = window.confirm("¿Deseas ejecutar el análisis de IA para todas las empresas? Esto puede tardar unos minutos.");
+        if (!confirmar) return;
+
         setEjecutando(true);
         try {
-            await iaService.analizar(empresaId);
-            alert("¡Análisis completado!");
+            // Llamamos al nuevo método masivo
+            const response = await iaService.analizarTodo(); 
+            alert(response.message || "¡Proceso masivo iniciado con éxito!");
+            
             if (onComplete) onComplete(); 
         } catch (error) {
-            alert("Error al ejecutar IA");
+            console.error(error);
+            alert("Error al iniciar el análisis masivo");
         } finally {
             setEjecutando(false);
         }
@@ -23,20 +26,21 @@ function AnalisisIAButton({ empresaId, onComplete }) {
 
     return (
         <button 
-            onClick={manejarEjecucionIA}
+            onClick={manejarEjecucionMasiva}
             disabled={ejecutando}
             style={{
-                backgroundColor: ejecutando ? '#ccc' : '#6366f1',
+                backgroundColor: ejecutando ? '#94a3b8' : '#4f46e5', // Un morado más profesional
                 color: 'white',
                 padding: '12px 24px',
                 border: 'none',
                 borderRadius: '8px',
                 fontWeight: 'bold',
                 cursor: ejecutando ? 'not-allowed' : 'pointer',
-                boxShadow: '0 4px 6px rgba(99, 102, 241, 0.2)'
+                boxShadow: '0 4px 6px rgba(79, 70, 229, 0.3)',
+                transition: 'all 0.3s ease'
             }}
         >
-            {ejecutando ? '🧠 Procesando...' : '🚀 Ejecutar Análisis IA'}
+            {ejecutando ? '🤖 Analizando Mercado...' : '🚀 Ejecutar IA Masiva'}
         </button>
     );
 }

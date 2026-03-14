@@ -3,6 +3,7 @@ import pandas as pd
 import tensorflow as tf
 import joblib
 import os
+from app.models.precio_historico import PrecioHistorico
 
 class MLEngine:
     DIAS_MEMORIA_IA = 60
@@ -22,6 +23,44 @@ class MLEngine:
         else:
             print("⚠️ Modelos no encontrados. Ejecuta app/ml/entrenamiento.py primero.")
 
+    def analizar_empresa(self, db, id_empresa):
+        """
+        MÉTODO PUENTE: Conecta la base de datos con la lógica de predicción.
+        """
+        # 1. Extraer precios históricos de la base de datos
+        # Necesitamos al menos 100 registros para que al calcular indicadores queden 60 limpios
+        query = db.query(PrecioHistorico).filter(
+            PrecioHistorico.IdEmpresa == id_empresa
+        ).order_by(PrecioHistorico.Fecha.asc()).all()
+
+        if len(query) < 80: # Margen de seguridad
+            return None
+
+        # 2. Convertir lista de objetos SQLAlchemy a DataFrame de Pandas
+        df = pd.DataFrame([
+            {
+                'Date': p.Fecha,
+                'Close': p.PrecioCierre,
+                'Volume': p.Volumen,
+                'High': p.PrecioCierre * 1.01, # Simulación si no tienes High/Low real
+                'Low': p.PrecioCierre * 0.99   # Simulación si no tienes High/Low real
+            } for p in query
+        ])
+        
+        # 3. Llamar a la función de predicción que ya tienes
+        resultado_ia = self.predecir(df)
+        
+        if not resultado_ia:
+            return None
+
+        # 4. Formatear la salida exactamente como la espera tu tabla 'Resultados'
+        return {
+            "PrediccionIA": resultado_ia["prediccion"],
+            "RSI": float(resultado_ia["features"]["RSI"]),
+            "Score": resultado_ia["score"],
+            "Recomendacion": resultado_ia["recomendacion"]
+        }
+    
     def calcular_indicadores(self, df):
         # Misma lógica exacta que en entrenamiento para mantener coherencia
         close = df['Close']

@@ -1,9 +1,11 @@
-name: Deploy
+name: Deploy Backend
 
 on:
   push:
     branches:
       - main
+    paths:
+      - 'ml-backend/**'
 
 jobs:
   deploy:

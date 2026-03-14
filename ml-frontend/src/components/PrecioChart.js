@@ -13,11 +13,6 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
             const cargarPrecios = async () => {
                 setCargando(true);
                 try {
-                    const data = await precioService.getByEmpresa(empresaId);
-                    // --- AGREGA ESTO AQUÍ ---
-                console.log("🚀 DATOS CRUDOS DEL BACKEND:", data[0]);
-                console.log("📌 TIPO DE DATO DE FECHA:", typeof data[0]?.Fecha);
-                // -----------------------
                     setDatosOriginales(data);
                 } catch (error) {
                     console.error("Error al cargar gráfica");

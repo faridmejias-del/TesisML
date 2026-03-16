@@ -202,3 +202,13 @@ class ResultadoOut(BaseModel):
     FechaAnalisis: Optional[datetime] = Field(..., description="Fecha del analisis")
 
     model_config = {"from_attributes": True}
+
+
+#Autenticacion 
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    id_usuario: Optional[int] = None
+    email: Optional[str] = None

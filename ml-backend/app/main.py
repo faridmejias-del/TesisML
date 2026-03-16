@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.routers import (sectors_router, 
+from app.routers import (auth_router, 
+                        sectors_router, 
                         empresas_router,
                         rols_router, 
                         usuarios_router, 
@@ -33,6 +34,7 @@ app.add_middleware(
 )
 
 # Registrar routers
+app.include_router(auth_router)
 app.include_router(sectors_router)
 app.include_router(empresas_router)
 app.include_router(rols_router)

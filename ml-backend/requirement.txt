@@ -12,3 +12,6 @@ numpy
 tensorflow
 bcrypt
 psycopg[binary]
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart

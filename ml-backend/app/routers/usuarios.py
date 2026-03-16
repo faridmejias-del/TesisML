@@ -4,6 +4,8 @@ from app.db.sessions import get_db
 from app.schemas.schemas import UsuarioCreate, UsuarioOut, UsuarioUpdate
 from app.services.usuario_service import UsuarioService
 from app.exceptions import ResourceNotFoundError, DuplicateResourceError, InvalidDataError
+from app.utils.deps import obtener_usuario_actual
+from app.models.usuario import Usuario
 
 router = APIRouter(prefix= "/api/v1/usuarios", tags=["Usuarios"])
 
@@ -19,7 +21,7 @@ def crear_usuario(usuario: UsuarioCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail=str(e))
     
 @router.get("", response_model=list[UsuarioOut])
-def obtener_usuarios(db: Session = Depends(get_db)):
+def obtener_usuarios(db: Session = Depends(get_db), current_user: Usuario = Depends(obtener_usuario_actual)):
     return UsuarioService.obtener_todos_usuarios(db)
 
 @router.get("/{usuario_id}", response_model=UsuarioOut)
@@ -32,7 +34,7 @@ def obtener_usuario(usuario_id: int, db: Session = Depends(get_db)):
 @router.get("/email/{email}", response_model = UsuarioOut)
 def obtener_usuario_por_email(email: str, db: Session = Depends(get_db)):
     try:
-        return UsuarioService.obtener_usuario_por_email(db, email)
+        return UsuarioService.obtener_usuario_email(db, email)
     except ResourceNotFoundError as e:
         raise HTTPException(status_code=404, detail=e.message)
 

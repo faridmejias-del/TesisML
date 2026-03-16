@@ -78,6 +78,17 @@ class UsuarioService:
     @staticmethod
     def obtener_todos_usuarios(db: Session) -> list[Usuario]:
         return db.query(Usuario).all()
+    
+    def obtener_usuario_email(db: Session, usuario_email: str) -> Usuario:
+        usuario = db.query(Usuario).filter(
+            Usuario.Email == usuario_email,
+            Usuario.Activo == True
+        ).first()
+
+        if not usuario:
+            raise ResourceNotFoundError("Usuario", usuario_email)
+        return usuario
+        
 
     @staticmethod
     def actualizar_usuario(db: Session, usuario_id: int, usuario_update: UsuarioUpdate) -> Usuario:
@@ -116,21 +127,3 @@ class UsuarioService:
     # =========================================================================
     # LÓGICA DE AUTENTICACIÓN Y SEGURIDAD
     # =========================================================================
-    @staticmethod
-    def verificar_y_autenticar(db: Session, email: str, password: str) -> Usuario:
-        """Autentica al usuario y actualiza su último login."""
-        usuario = db.query(Usuario).filter(
-            Usuario.Email == email,
-            Usuario.Activo == True
-        ).first()
-        
-        if not usuario or not verify_password(password, usuario.PasswordU):
-            # Aquí podrías implementar el incremento de IntentosFallidos si el usuario existe
-            raise InvalidDataError("Credenciales inválidas o cuenta desactivada")
-        
-        # Actualizamos la auditoría de acceso
-        usuario.UltimoLogin = datetime.utcnow()
-        usuario.IntentosFallidos = 0
-        db.commit()
-        
-        return usuario

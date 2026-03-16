@@ -11,20 +11,20 @@ class Settings(BaseSettings):
     """Configuración de la aplicación desde variables de entorno."""
     
     # Información de la aplicación
-    PROJECT_NAME: str = "PrediccionML API"
+    PROJECT_NAME: str = "TesisML API"
     VERSION: str = "1.0.0"
-    
     # Base de datos
     DATABASE_URL: str
-    
     # API
     API_V1_STR: str = "/api/v1"
-    
     # CORS
     CORS_ORIGINS: List[str] = ["*"]
-    
     # Logging
     LOG_LEVEL: str = "INFO"
+
+    SECRET_KEY: str
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
     class Config:
         """Configuración de Pydantic Settings."""

@@ -30,7 +30,7 @@ def obtener_usuario_actual(token: str = Depends(oauth2_scheme), db: Session = De
         raise credentials_exception
         
     # Buscamos al usuario en la BD para asegurar que sigue existiendo y está activo
-    usuario = UsuarioService.obtener_usuario(db, usuario_id=token_data.id_usuario)
+    usuario = UsuarioService.obtener_usuario_por_id(db, usuario_id=token_data.id_usuario)
     if usuario is None or not usuario.Activo:
         raise credentials_exception
         

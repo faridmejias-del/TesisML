@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, BackgroundTasks
 from sqlalchemy.orm import Session
 from app.db.sessions import get_db
-from app.auto.ia_masiva import ejecutar_ia_masiva  # Importamos la lógica que crearemos
+from app.auto.generar_predicciones import ejecutar_analisis_diario # Importamos la lógica que crearemos
 
 router = APIRouter(prefix="/api/v1/ia", tags=["IA Engine"])
 
@@ -13,7 +13,7 @@ async def analizar_todas_las_empresas(background_tasks: BackgroundTasks, db: Ses
     """
     # Usamos BackgroundTasks para que FastAPI responda "OK" de inmediato 
     # mientras el servidor trabaja con TensorFlow por detrás.
-    background_tasks.add_task(ejecutar_ia_masiva, db)
+    background_tasks.add_task(ejecutar_analisis_diario, db)
     
     return {
         "status": "success",

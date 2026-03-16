@@ -13,9 +13,11 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
             const cargarPrecios = async () => {
                 setCargando(true);
                 try {
+                    const data = await precioService.obtenerPrecios(empresaId); 
+                    
                     setDatosOriginales(data);
                 } catch (error) {
-                    console.error("Error al cargar gráfica");
+                    console.error("Error al cargar gráfica", error);
                 } finally {
                     setCargando(false);
                 }

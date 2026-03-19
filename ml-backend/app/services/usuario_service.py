@@ -1,4 +1,3 @@
-import re
 from datetime import datetime
 from sqlalchemy.orm import Session
 from app.models.usuario import Usuario
@@ -6,6 +5,7 @@ from app.models.rol import Rol
 from app.schemas.schemas import UsuarioCreate, UsuarioUpdate
 from app.exceptions import ResourceNotFoundError, DuplicateResourceError, InvalidDataError
 from app.utils.security import hash_password, verify_password
+import re
 
 class UsuarioService: 
     # =========================================================================
@@ -33,9 +33,16 @@ class UsuarioService:
             raise InvalidDataError("El formato del email es inválido")
     
     @staticmethod
-    def validar_largo_password(password: str) -> None:
-        if len(password) < 8 or len(password) > 32:
-            raise InvalidDataError("La contraseña debe tener entre 8 y 32 caracteres")
+    def validar_password(password: str) -> None:
+        caracteres = ["*", "/", ".", "%", "+", "-"]
+        if len(password) < 6 or len(password) > 32:
+            raise InvalidDataError("Debe tener 8 y 32 caracteres")
+        if not any(char.isdigit() for char in password):
+            raise InvalidDataError("Debe contener algún número")
+        if not any(char.isupper() for char in password):
+            raise InvalidDataError("Debe tener alguna mayuscula")
+        if not any(char in caracteres for char in password):
+            raise InvalidDataError("Debe contener algun caracter especial")
 
     # =========================================================================
     # OPERACIONES CRUD (CON FILTRO DE ACTIVO)
@@ -46,7 +53,7 @@ class UsuarioService:
         UsuarioService.validar_formato_email(usuario.Email)
         UsuarioService._validar_email_unico(db, usuario.Email)
         UsuarioService._validar_rol_existe(db, usuario.IdRol)
-        UsuarioService.validar_largo_password(usuario.PasswordU)
+        UsuarioService.validar_password(usuario.PasswordU)
         
         db_usuario = Usuario(
             Nombre=usuario.Nombre,
@@ -54,8 +61,8 @@ class UsuarioService:
             Email=usuario.Email,
             PasswordU=hash_password(usuario.PasswordU),
             IdRol=usuario.IdRol,
-            Activo=True,                      # Nuevo campo
-            FechaCreacion=datetime.utcnow(),  # Nuevo campo
+            Activo=True,                      
+            FechaCreacion=datetime.utcnow(),  
         )
         
         db.add(db_usuario)
@@ -65,7 +72,7 @@ class UsuarioService:
     
     @staticmethod
     def obtener_usuario_por_id(db: Session, usuario_id: int) -> Usuario:
-        # Solo obtenemos usuarios activos (Soft Delete)
+        
         usuario = db.query(Usuario).filter(
             Usuario.IdUsuario == usuario_id,
             Usuario.Activo == True
@@ -89,7 +96,6 @@ class UsuarioService:
             raise ResourceNotFoundError("Usuario", usuario_email)
         return usuario
         
-
     @staticmethod
     def actualizar_usuario(db: Session, usuario_id: int, usuario_update: UsuarioUpdate) -> Usuario:
         db_usuario = UsuarioService.obtener_usuario_por_id(db, usuario_id)
@@ -123,7 +129,3 @@ class UsuarioService:
         db_usuario.Activo = False  # Marcamos como inactivo en lugar de borrar
         db.commit()
         return True
-
-    # =========================================================================
-    # LÓGICA DE AUTENTICACIÓN Y SEGURIDAD
-    # =========================================================================

@@ -3,8 +3,10 @@ import yfinance as yf
 import pandas as pd
 import warnings
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from app.models.empresa import Empresa
 from app.models.precio_historico import PrecioHistorico
+from datetime import datetime
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -15,55 +17,64 @@ def actualizar_precios(db: Session):
     
     for empresa in empresas:
         try:
-            data = yf.download(empresa.Ticket, period="max", interval="1d", auto_adjust=False)
+            # 1. Buscamos la última fecha registrada para esta empresa
+            # Así solo le pedimos a Yahoo Finance lo que nos falta
+            ultima_fecha = db.query(func.max(PrecioHistorico.Fecha)).filter(
+                PrecioHistorico.IdEmpresa == empresa.IdEmpresa
+            ).scalar()
+
+            if ultima_fecha:
+                # Descargamos solo desde la última fecha que tenemos
+                data = yf.download(empresa.Ticket, start=ultima_fecha, interval="1d", auto_adjust=False)
+            else:
+                # Si la empresa es nueva y no tiene datos, descargamos todo
+                data = yf.download(empresa.Ticket, period="max", interval="1d", auto_adjust=False)
             
             if not data.empty:
-                # 1. OPTIMIZACIÓN: Cargamos las fechas que ya existen para no consultar la BD 10,000 veces
-                fechas_bd = db.query(PrecioHistorico.Fecha).filter(PrecioHistorico.IdEmpresa == empresa.IdEmpresa).all()
-                fechas_existentes = {f[0] for f in fechas_bd} # Lo convertimos en un Set para búsquedas instantáneas
+                nuevos_registros = 0
                 
-                nuevos_registros = []
+                # 2. OPTIMIZACIÓN: Cargamos las fechas que YA tenemos de esta empresa
+                # en un Set de Python. Esto hace que la validación sea instantánea
+                # y evita hacer miles de consultas a la base de datos.
+                fechas_existentes = {
+                    f[0] for f in db.query(PrecioHistorico.Fecha).filter(
+                        PrecioHistorico.IdEmpresa == empresa.IdEmpresa
+                    ).all()
+                }
                 
-                # 2. Recorremos TODA la historia descargada
-                for index, row in data.iterrows():
-                    fecha_yf = index.date()
+                # 3. Iteramos por TODAS las filas obtenidas (no solo iloc[-1])
+                for fecha_yf, fila in data.iterrows():
+                    fecha_actual = fecha_yf.date()
                     
-                    # Si la fecha ya existe en la BD, pasamos al siguiente día
-                    if fecha_yf in fechas_existentes:
-                        continue
-                        
-                    # Extracción de Close y Volume
-                    precio_bruto = row['Close']
-                    volumen_bruto = row['Volume']
+                    # Verificamos si la fecha ya existe para esta empresa
+                    if fecha_actual in fechas_existentes:
+                        continue # Si ya la tenemos, saltamos al siguiente día
+                    
+                    # Extracción de close y volume
+                    precio_bruto = fila['Close']
+                    volumen_bruto = fila['Volume']
                     
                     if isinstance(precio_bruto, pd.Series):
                         precio_bruto = precio_bruto.iloc[0]
                     if isinstance(volumen_bruto, pd.Series):
                         volumen_bruto = volumen_bruto.iloc[0]
                         
-                    # Evitamos errores si algún día el mercado no reportó datos (NaN)
-                    if pd.isna(precio_bruto) or pd.isna(volumen_bruto):
-                        continue
-                        
-                    # Convertimos a los tipos de datos exactos para la Base de Datos
+                    # Convertimos a los tipos de datos exactos para la BD
                     precio_cierre_final = float(precio_bruto)
                     volumen_final = int(volumen_bruto)
                     
                     nuevo_precio = PrecioHistorico(
                         IdEmpresa=empresa.IdEmpresa,
-                        Fecha=fecha_yf,
+                        Fecha=fecha_actual,
                         PrecioCierre=precio_cierre_final,
                         Volumen=volumen_final
                     )
-                    nuevos_registros.append(nuevo_precio)
-                
-                # 3. Inserción Masiva
-                if nuevos_registros:
-                    db.bulk_save_objects(nuevos_registros)
-                    db.commit() # Guardamos los miles de registros de un solo golpe
-                    print(f"✅ {empresa.Ticket}: Se agregaron {len(nuevos_registros)} nuevos días.")
-                else:
-                    print(f"⚡ {empresa.Ticket}: Ya estaba completamente al día.")
+                    db.add(nuevo_precio)
+                    nuevos_registros += 1
+            
+            # Guardamos todos los registros nuevos de una sola vez por empresa
+            db.commit() 
+            print(f"✅ {empresa.Ticket} actualizado: {nuevos_registros} nuevos precios agregados.")
             
         except Exception as e:
             print(f"❌ Error actualizando {empresa.Ticket}: {e}")

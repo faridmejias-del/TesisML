@@ -13,7 +13,7 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
             const cargarPrecios = async () => {
                 setCargando(true);
                 try {
-                    const data = await precioService.obtenerPrecios(empresaId); 
+                    const data = await precioService.getByEmpresa(empresaId); 
                     
                     setDatosOriginales(data);
                 } catch (error) {
@@ -72,6 +72,11 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
     // 1. Procesamos todos los datos primero para tener fechas reales sobre las que filtrar
     const datosProcesados = datosOriginales.map(d => formatearParaGrafica(d, rango !== 'TODO'));
 
+    datosProcesados.sort((a, b) => {
+        if (!a.fechaValida || !b.fechaValida) return 0;
+        return a.fechaValida.getTime() - b.fechaValida.getTime();
+    });
+    
     // 2. Si el rango es TODO, devolvemos todo lo procesado
     if (rango === 'TODO') return datosProcesados;
 

@@ -87,13 +87,18 @@ def procesar_una_empresa(id_empresa):
     finally:
         db_thread.close()
 
-def entrenar_y_guardar():
+def entrenar_y_guardar(id_modelo_especifico: int = None):
     db = SessionLocal()
     try:
         empresas = db.query(Empresa).filter(Empresa.Activo == True).all()
         ids_empresas = [e.IdEmpresa for e in empresas]
-        # Consultamos los modelos activos en BD antes de procesar los datos
-        modelos_activos = db.query(ModeloIA).filter(ModeloIA.Activo == True).all()
+
+        query_modelos = db.query(ModeloIA).filter(ModeloIA.Activo==True)
+
+        if id_modelo_especifico: 
+            query_modelos = query_modelos.filter(ModeloIA.IdModelo == id_modelo_especifico)
+        
+        modelos_activos = query_modelos.all()
     finally:
         db.close()
 

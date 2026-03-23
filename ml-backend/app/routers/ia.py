@@ -1,5 +1,5 @@
 # app/routers/ia.py
-from fastapi import APIRouter, Depends, BackgroundTasks
+from fastapi import APIRouter, Depends, BackgroundTasks, status
 from sqlalchemy.orm import Session
 from app.db.sessions import get_db
 from app.auto.generar_predicciones import ejecutar_analisis_diario
@@ -33,11 +33,12 @@ def obtener_metricas_modelo():
     except FileNotFoundError:
         return {"Error": "Metricas no encontradas"}
     
-@router.post("/entrenar-modelo-lstm")
-async def entrenar_modelo_lstm(background_task: BackgroundTasks):
-    background_task.add_task(entrenar_y_guardar)
-
-    return {
-        "status": "Success",
-        "message": "Entreamiento de LSTM iniciado"
-    }
+@router.post("/entrenar-modelo/{id_modelo}", status_code=status.HTTP_202_ACCEPTED)
+def entrenar_modelo_individual(
+    id_modelo: int,
+    background_tasks: BackgroundTasks,
+    # current_user: Usuario = Depends(obtener_usuario_actual) # Descomenta esto si tu ruta está protegida con JWT
+):
+    """Inicia el entrenamiento en segundo plano de un solo modelo específico."""
+    background_tasks.add_task(entrenar_y_guardar, id_modelo_especifico=id_modelo)
+    return {"message": f"Entrenamiento del modelo ID {id_modelo} iniciado en segundo plano."}

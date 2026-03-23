@@ -15,8 +15,8 @@ from app.models.precio_historico import PrecioHistorico
 from app.models.modelo_ia import ModeloIA
 
 # Importamos las arquitecturas separadas físicamente
-from app.ml.arquitecturas.v1_lstm import obtener_modelo_v1
-from app.ml.arquitecturas.v2_bidireccional import obtener_modelo_v2
+from app.ml.arquitectura.v1_lstm import obtener_modelo_v1
+from app.ml.arquitectura.v2_bidireccional import obtener_modelo_v2
 
 DIAS_MEMORIA_IA = 90
 FEATURES = ['Close', 'Volume', 'RSI', 'MACD', 'ATR', 'EMA20', 'EMA50']

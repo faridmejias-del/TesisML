@@ -16,7 +16,6 @@ class Resultado(Base):
     EMA20 = Column(DECIMAL, nullable=False)
     EMA50 = Column(DECIMAL, nullable=False)
     Recomendacion = Column(String(50))
-    IdEmpresa = Column(Integer, ForeignKey("Empresa.IdEmpresa"))
     FechaAnalisis = Column(DateTime, server_default=func.now())
 
     IdEmpresa = Column(Integer, ForeignKey("Empresa.IdEmpresa"))

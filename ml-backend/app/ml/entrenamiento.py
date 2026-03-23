@@ -2,22 +2,30 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 from sklearn.preprocessing import MinMaxScaler
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, LSTM, Input
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import EarlyStopping
 import joblib
 import os
-import json
 import concurrent.futures
 from tqdm import tqdm
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+
 from app.db.sessions import SessionLocal
 from app.models.empresa import Empresa
 from app.models.precio_historico import PrecioHistorico
+from app.models.modelo_ia import ModeloIA
+
+# Importamos las arquitecturas separadas físicamente
+from app.ml.arquitecturas.v1_lstm import obtener_modelo_v1
+from app.ml.arquitecturas.v2_bidireccional import obtener_modelo_v2
 
 DIAS_MEMORIA_IA = 90
 FEATURES = ['Close', 'Volume', 'RSI', 'MACD', 'ATR', 'EMA20', 'EMA50']
+
+# Diccionario que conecta el texto de la BD con la función de Python
+MAPA_ARQUITECTURAS = {
+    "v1": obtener_modelo_v1,
+    "v2": obtener_modelo_v2
+}
 
 def calcular_indicadores(df):
     close = df['Close']
@@ -84,17 +92,22 @@ def entrenar_y_guardar():
     try:
         empresas = db.query(Empresa).filter(Empresa.Activo == True).all()
         ids_empresas = [e.IdEmpresa for e in empresas]
+        # Consultamos los modelos activos en BD antes de procesar los datos
+        modelos_activos = db.query(ModeloIA).filter(ModeloIA.Activo == True).all()
     finally:
         db.close()
 
     if not ids_empresas:
         print("❌ Error: No hay empresas activas.")
         return
+        
+    if not modelos_activos:
+        print("⚠️ No hay modelos de IA activos en la base de datos. Abortando.")
+        return
 
     print(f"⚡ Procesando en paralelo {len(ids_empresas)} empresas...")
-    
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-        resultados = list(tqdm(executor.map(procesar_una_empresa, ids_empresas), total=len(ids_empresas), desc="Procesando Datos"))
+        resultados = list(tqdm(executor.map(procesar_una_empresa, ids_empresas), total=len(ids_empresas), desc="Extrayendo Datos"))
 
     lista_dfs = [df for df in resultados if df is not None]
 
@@ -111,7 +124,6 @@ def entrenar_y_guardar():
     
     print("🧩 Construyendo secuencias de entrenamiento...")
     x_train_global, y_train_global = [], []
-    
     for df in lista_dfs:
         scaled_data = scaler.transform(df[FEATURES].values)
         for i in range(DIAS_MEMORIA_IA, len(scaled_data)):
@@ -121,57 +133,40 @@ def entrenar_y_guardar():
     x_train = np.array(x_train_global)
     y_train = np.array(y_train_global)
     
-    print(f"📊 Total de secuencias generadas: {len(x_train)}")
-    
-    print("🧠 Entrenando red neuronal LSTM masiva...")
-    model = Sequential([
-        Input(shape=(x_train.shape[1], x_train.shape[2])),
-        LSTM(64, return_sequences=False),
-        Dense(32, activation='relu'),
-        Dense(1)
-    ])
-    
-    model.compile(optimizer=Adam(0.001), loss='mse')
-    early_stopping = EarlyStopping(
-        monitor='val_loss',
-        patience = 5,
-        restore_best_weights=True
-    )
-    model.fit(x_train, 
-            y_train, 
+    ruta_modelos = os.path.join(os.path.dirname(__file__), 'models')
+    os.makedirs(ruta_modelos, exist_ok=True)
+
+    # Entrenamiento Dinámico basado en la Base de Datos
+    for modelo_db in modelos_activos:
+        print(f"\n🚀 Iniciando entrenamiento de {modelo_db.Nombre} (Versión {modelo_db.Version})...")
+        
+        funcion_arquitectura = MAPA_ARQUITECTURAS.get(modelo_db.Version)
+        if not funcion_arquitectura:
+            print(f"⚠️ No hay archivo de arquitectura físico para la versión {modelo_db.Version}. Saltando...")
+            continue
+
+        model = funcion_arquitectura(x_train.shape[1], x_train.shape[2])
+        model.compile(optimizer=Adam(0.001), loss='mse')
+        
+        early_stopping = EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
+        
+        model.fit(
+            x_train, y_train, 
             epochs=100, 
             batch_size=64, 
             verbose=1, 
             validation_split=0.1, 
-            callbacks=[early_stopping])
-    
-    ruta_modelos = os.path.join(os.path.dirname(__file__), 'models')
-    os.makedirs(ruta_modelos, exist_ok=True)
-    
-    ruta_modelo = os.path.join(ruta_modelos, 'modelo_acciones.keras')
-    model.save(ruta_modelo)
-    
+            callbacks=[early_stopping]
+        )
+        
+        ruta_modelo = os.path.join(ruta_modelos, f'modelo_acciones_{modelo_db.Version}.keras')
+        model.save(ruta_modelo)
+        print(f"✅ Modelo {modelo_db.Nombre} guardado exitosamente.")
+
+    # Guardar scaler global (compartido por todas las redes neuronales)
     ruta_scaler = os.path.join(ruta_modelos, 'scaler.pkl')
     joblib.dump(scaler, ruta_scaler)
-    
-    print(f"✅ Modelo guardado en: {ruta_modelo}")
-    print(f"✅ Scaler guardado en: {ruta_scaler}")
-
-def guardar_metricas(y_true, y_pred): 
-    metricas = {
-        "accuracy": accuracy_score(y_true, y_pred),
-        "precision": precision_score(y_true, y_pred, average='weighted', zero_division=0),
-        "recall": recall_score(y_true, y_pred, average='weighted', zero_division=0),
-        "f1-score": f1_score(y_true, y_pred, average='weighted', zero_division=0)
-    }
-    
-    ruta_modelos = os.path.join(os.path.dirname(__file__), 'models')
-    os.makedirs(ruta_modelos, exist_ok=True)
-    
-    with open(os.path.join(ruta_modelos, "metricas.json"), "w") as f:
-        json.dump(metricas, f)
-    
-    print("✅ Métricas de evaluación creadas")
+    print("✅ ¡Entrenamiento masivo completado con éxito!")
 
 if __name__ == "__main__":
     entrenar_y_guardar()

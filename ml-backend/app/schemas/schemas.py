@@ -4,10 +4,9 @@ Define las estructuras de entrada y salida para los endpoints.
 """
 
 from decimal import Decimal
-
 from pydantic import Field, computed_field, ConfigDict, BaseModel
 from datetime import datetime, date
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 
 # ========================= SECTOR SCHEMAS =========================
 
@@ -200,9 +199,27 @@ class ResultadoOut(BaseModel):
     Recomendacion: str = Field(..., description="Recomendacion")
     IdEmpresa: int = Field(..., description="Id de la empresa a la que pertence")
     FechaAnalisis: Optional[datetime] = Field(..., description="Fecha del analisis")
+    IdModeloIA: int = Field(..., description="Modelo Ejecutado")
 
     model_config = {"from_attributes": True}
 
+class ModeloIABase(BaseModel):
+    Nombre: str = Field(..., description="Nombre del modelo")
+    Version: str = Field(..., description="Version del modelo")
+    Descripcion: str = Field(..., description="Descripcion breve del modelo")
+    Hiperparametros: Optional[Dict]= Field(..., description="Configuracion del modelo")
+    Activo: bool = Field(..., description="Modelo activo")
+
+class ModeloIACreate(ModeloIABase):
+    pass
+
+class ModeloIAOut(BaseModel):
+    Nombre: str = Field(..., description="Nombre del modelo")
+    Version: str = Field(..., description="Version del modelo")
+    Descripcion: str = Field(..., description="Descripcion breve del modelo")
+    Hiperparametros: dict = Field(..., description="Configuracion del modelo")
+
+    model_config = {"from_attributes": True}
 
 #Autenticacion 
 class Token(BaseModel):

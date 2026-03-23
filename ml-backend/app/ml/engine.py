@@ -1,17 +1,32 @@
+import os
 import numpy as np
 import pandas as pd
 import tensorflow as tf
 import joblib
-import os
-from app.models.precio_historico import PrecioHistorico
+
+# --- CONFIGURACIÓN DE GPU (Opcional, previene errores de VRAM si usas gráfica) ---
+"""gpus = tf.config.list_physical_devices('GPU')
+if gpus:
+    try:
+        for gpu in gpus:
+            tf.config.experimental.set_memory_growth(gpu, True)
+    except RuntimeError as e:
+        print(f"⚠️ Error configurando GPU en Engine: {e}")"""
+# ---------------------------------------------------------------------------------
 
 class MLEngine:
     DIAS_MEMORIA_IA = 90
     FEATURES = ['Close', 'Volume', 'RSI', 'MACD', 'ATR', 'EMA20', 'EMA50']
 
-    def __init__(self):
+    def __init__(self, version="v1"):
+        """
+        Inicializa el motor cargando el modelo específico a la versión solicitada.
+        """
+        self.version = version
         base_dir = os.path.dirname(os.path.abspath(__file__))
-        model_path = os.path.join(base_dir, "models", "modelo_acciones.keras")
+        
+        # Carga dinámica basada en el parámetro 'version'
+        model_path = os.path.join(base_dir, "models", f"modelo_acciones_{self.version}.keras")
         scaler_path = os.path.join(base_dir, "models", "scaler.pkl")
         
         self.model = None
@@ -21,12 +36,13 @@ class MLEngine:
             self.model = tf.keras.models.load_model(model_path)
             self.scaler = joblib.load(scaler_path)
         else:
-            print("⚠️ Modelos no encontrados. Ejecuta app/ml/entrenamiento.py primero.")
+            print(f"⚠️ Archivos para el modelo {self.version} no encontrados en {base_dir}/models.")
 
     def calcular_indicadores(self, df):
-        # Hacemos una copia para no alterar el original
-        df = df.copy()
-        
+        """
+        Calcula los indicadores técnicos. Debe ser una copia exacta de la función
+        en entrenamiento.py para que la IA reciba los datos como aprendió a leerlos.
+        """
         close = df['Close']
         high = df['High']
         low = df['Low']
@@ -43,9 +59,13 @@ class MLEngine:
         ema26 = close.ewm(span=26, adjust=False).mean()
         df['MACD'] = ema12 - ema26
         
-        # ATR 
+        # ATR
         prev_close = close.shift(1)
-        tr = pd.concat([high - low, (high - prev_close).abs(), (low - prev_close).abs()], axis=1).max(axis=1)
+        tr = pd.concat([
+            high - low,
+            (high - prev_close).abs(),
+            (low - prev_close).abs()
+        ], axis=1).max(axis=1)
         df['ATR'] = tr.rolling(window=14).mean()
         
         # EMAs
@@ -54,88 +74,63 @@ class MLEngine:
         
         return df.dropna()
 
-    def analizar_empresa(self, db, id_empresa):
-        """
-        MÉTODO PUENTE: Conecta la base de datos con la lógica de predicción.
-        """
-        query = db.query(PrecioHistorico).filter(
-            PrecioHistorico.IdEmpresa == id_empresa
-        ).order_by(PrecioHistorico.Fecha.asc()).all()
-
-        if len(query) < 80:
-            return None
-
-        df = pd.DataFrame([
-            {
-                'Date': p.Fecha,
-                'Close': float(p.PrecioCierre),
-                'Volume': int(p.Volumen),
-                'High': float(p.PrecioCierre) * 1.01,
-                'Low': float(p.PrecioCierre) * 0.99  
-            } for p in query
-        ])
-        df.set_index('Date', inplace=True)
-        
-        # Calculamos indicadores ANTES de predecir
-        df_ind = self.calcular_indicadores(df)
-        
-        if len(df_ind) < self.DIAS_MEMORIA_IA:
-            return None
-
-        resultado_ia = self.predecir(df_ind)
-        
-        if not resultado_ia:
-            return None
-
-        return {
-            "PrediccionIA": resultado_ia["prediccion"],
-            "RSI": float(resultado_ia["features"]["RSI"]),
-            "Score": resultado_ia["score"],
-            "Recomendacion": resultado_ia["recomendacion"]
-        }
-
     def predecir(self, df_ind):
         """
-        Recibe un DataFrame con los indicadores ya calculados.
+        Toma el DataFrame con indicadores, escala los datos, hace la predicción,
+        desescala el resultado y calcula el Score de recomendación.
         """
         if self.model is None or self.scaler is None:
-            raise Exception("El motor de IA no tiene un modelo cargado.")
+            return None
 
-        # 2. Tomar exactamente el último bloque de 60 días
-        data = df_ind[self.FEATURES].values[-self.DIAS_MEMORIA_IA:]
-        
-        # 3. Escalar
+        # 1. Preparar la secuencia de entrada (últimos 90 días)
+        data = df_ind[self.FEATURES].values
         scaled_data = self.scaler.transform(data)
-        X_pred = scaled_data.reshape(1, self.DIAS_MEMORIA_IA, len(self.FEATURES))
         
-        # 4. Inferencia (La IA nos devuelve un número entre 0 y 1)
-        pred_scaled = self.model.predict(X_pred, verbose=0)
+        x_test = []
+        x_test.append(scaled_data[-self.DIAS_MEMORIA_IA:, :])
+        x_test = np.array(x_test)
         
-        # 5. Desescalado MATEMÁTICAMENTE CORRECTO
-        # Creamos un array ficticio (dummy) con ceros del tamaño de nuestras FEATURES (7 columnas)
-        # porque el scaler espera 7 columnas para desescalar.
+        # 2. Inferencia (Predicción de la IA)
+        prediccion_escalada = self.model.predict(x_test, verbose=0)
+        
+        # 3. Desescalado para obtener el precio real en moneda
         dummy_array = np.zeros((1, len(self.FEATURES)))
-        # Ponemos la predicción de la IA en la primera columna (Close), que es la que nos importa
-        dummy_array[0, 0] = pred_scaled[0][0]
-        # Desescalamos toda la matriz y extraemos el valor real de la columna 'Close'
+        dummy_array[0, 0] = prediccion_escalada[0][0]
         pred_real = self.scaler.inverse_transform(dummy_array)[0, 0]
         
-        # 6. Cálculo de lógica de negocio
-        precio_actual = df_ind['Close'].iloc[-1]
+        # 4. Lógica de Negocio (Variación y Score)
+        precio_actual = df_ind.iloc[-1]['Close']
         var_pct = ((pred_real - precio_actual) / precio_actual) * 100
         
-        rsi_actual = df_ind['RSI'].iloc[-1]
         score = 0
-        if abs(var_pct) > 1.5: score += 2 if var_pct > 0 else -2
-        if rsi_actual < 35: score += 2
-        if rsi_actual > 70: score -= 2
-
-        recomendacion = "ALCISTA" if score >= 2 else "BAJISTA" if score <= -2 else "Sin señal"
         
+        # Regla 1: Tendencia del precio predicho
+        if var_pct > 1.0: 
+            score += 1
+        elif var_pct < -1.0: 
+            score -= 1
+            
+        # Regla 2: Indicador de fuerza relativa (RSI)
+        rsi_actual = df_ind.iloc[-1]['RSI']
+        if rsi_actual < 40: 
+            score += 1 # Sobrevendido (buen momento para comprar)
+        elif rsi_actual > 60: 
+            score -= 1 # Sobrecomprado (riesgo de caída)
+            
+        # Veredicto final
+        if score >= 1: 
+            recomendacion = "ALCISTA"
+        elif score <= -1: 
+            recomendacion = "BAJISTA"
+        else: 
+            recomendacion = "MANTENER"
+            
+        # Retornamos el empaquetado completo listo para ser guardado en la Base de Datos
         return {
             "prediccion": float(pred_real),
             "variacion": float(var_pct),
             "score": float(score),
             "recomendacion": recomendacion,
-            "features": df_ind.iloc[-1] 
+            "modelo": self.version,              # Etiqueta de la versión usada
+            "features": df_ind.iloc[-1].to_dict() # Fotografía de los indicadores de hoy
         }

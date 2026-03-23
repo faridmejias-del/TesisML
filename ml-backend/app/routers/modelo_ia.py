@@ -1,0 +1,42 @@
+# app/routers/modelos_ia.py
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+from typing import List
+
+from app.db.sessions import get_db
+from app.models.modelo_ia import ModeloIA
+from app.schemas.schemas import ModeloIAOut
+from app.utils.deps import obtener_usuario_actual
+from app.models.usuario import Usuario
+
+router = APIRouter(prefix="/api/v1/modelos-ia", tags=["Registro de Modelos IA"])
+
+@router.get("", response_model=List[ModeloIAOut])
+def obtener_todos_los_modelos(
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(obtener_usuario_actual) # Protegemos la ruta
+):
+    """Obtiene todos los modelos (activos e inactivos) para el panel de administración."""
+    modelos = db.query(ModeloIA).all()
+    return modelos
+
+@router.get("/activos", response_model=List[ModeloIAOut])
+def obtener_modelos_activos(
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(obtener_usuario_actual)
+):
+    """Obtiene solo los modelos activos (ideal para el filtro del usuario final)."""
+    modelos = db.query(ModeloIA).filter(ModeloIA.Activo == True).all()
+    return modelos
+
+@router.get("/{id_modelo}", response_model=ModeloIAOut)
+def obtener_modelo_por_id(
+    id_modelo: int, 
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(obtener_usuario_actual)
+):
+    """Obtiene el detalle de un modelo específico."""
+    modelo = db.query(ModeloIA).filter(ModeloIA.IdModelo == id_modelo).first()
+    if not modelo:
+        raise HTTPException(status_code=404, detail="Modelo no encontrado")
+    return modelo

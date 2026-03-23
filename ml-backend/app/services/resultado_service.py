@@ -21,6 +21,7 @@ class ResultadoService:
             EMA50 = features['EMA50'],
             Score = data_ml['score'],
             Recomendacion = data_ml['recomendacion'],
+            IdModelo = data_ml['id_modelo'],
             FechaAnalisis = datetime.utcnow()
         )
         db.add(nuevo_resultado)

@@ -19,4 +19,8 @@ class Resultado(Base):
     IdEmpresa = Column(Integer, ForeignKey("Empresa.IdEmpresa"))
     FechaAnalisis = Column(DateTime, server_default=func.now())
 
+    IdEmpresa = Column(Integer, ForeignKey("Empresa.IdEmpresa"))
+    IdModelo = Column(Integer, ForeignKey("ModeloIA.IdModelo"))
+
     empresa = relationship("Empresa", back_populates="resultados")
+    modelo_ia = relationship("ModeloIA", back_populates="resultados")

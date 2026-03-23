@@ -1,6 +1,6 @@
 // ml-frontend/src/components/EntrenamientoSelector.js
 import React, { useState, useEffect } from 'react';
-import iaService from '../services/iaService';
+import { iaService } from 'services';
 
 function EntrenamientoSelector() {
     const [modelos, setModelos] = useState([]);

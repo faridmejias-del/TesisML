@@ -1,6 +1,6 @@
 // src/components/RolList.js
 import React, { useState, useEffect } from 'react';
-import rolService from '../services/rolService';
+import { rolService } from 'services';
 
 function RolList() {
     const [roles, setRoles] = useState([]);

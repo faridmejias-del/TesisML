@@ -1,6 +1,6 @@
 // src/components/SectorList.js
 import React, { useState, useEffect } from 'react';
-import { sectorService } from '../services/sectorService';
+import { sectorService } from 'services';
 
 function SectorList() {
     const [sectores, setSectores] = useState([]);

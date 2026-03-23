@@ -1,13 +1,20 @@
 // src/App.js
 import React, { useState } from 'react';
-import AuthForm from './components/AuthForm'; 
-import SectorList from './components/SectorList';
-import EmpresaTable from './components/EmpresaTable';
-import RolList from './components/RolList';
-import PrecioChart from './components/PrecioChart';
-import ResultadoPanel from './components/ResultadoPanel';
-import AdminPanel from './components/AdminPanel';
-import AnalisisIAButton from './components/AnalisisIAButton'; // <--- El nuevo componente
+
+// Importación de componentes 
+import { 
+  AuthForm, 
+  AdminPanel, 
+  EmpresaTable, 
+  //SectorList,
+  //RolList,
+  PrecioChart,
+  ResultadoPanel,
+  AnalisisIAButton
+} from 'components';
+
+
+
 
 function App() {
   const [empresaSeleccionada, setEmpresaSeleccionada] = useState({ id: null, nombre: "" });

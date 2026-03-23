@@ -1,34 +1,34 @@
 import React, { useState, useEffect } from 'react';
-import resultadoService from '../services/resultadoService';
+import { resultadoService } from 'services';
 
 function ResultadoPanel({ empresaId }) {
     const [resultado, setResultado] = useState(null);
     const [cargando, setCargando] = useState(false);
 
-    // Función para cargar los datos desde la BD
-    const cargarResultado = async () => {
-        if (!empresaId) return;
-        setCargando(true);
-        try {
-            const data = await resultadoService.getByEmpresa(empresaId);
-            if (data && data.length > 0) {
-                // Tomamos el último resultado generado en la BD
-                setResultado(data[data.length - 1]);
-            } else {
-                setResultado(null);
-            }
-        } catch (error) {
-            console.error("Error cargando resultados:", error);
-            setResultado(null);
-        } finally {
-            setCargando(false);
-        }
-    };
 
     // Recargar cada vez que cambie la empresa seleccionada
     useEffect(() => {
+        // Función para cargar los datos desde la BD (Movida aquí adentro)
+        const cargarResultado = async () => {
+            if (!empresaId) return;
+            setCargando(true);
+            try {
+                const data = await resultadoService.getByEmpresa(empresaId);
+                if (data && data.length > 0) {
+                    setResultado(data[data.length - 1]);
+                } else {
+                    setResultado(null);
+                }
+            } catch (error) {
+                console.error("Error cargando resultados:", error);
+                setResultado(null);
+            } finally {
+                setCargando(false);
+            }
+        };
+
         cargarResultado();
-    }, [empresaId]);
+    }, [empresaId]); // Ahora empresaId es la única dependencia real
 
     if (!empresaId) {
         return (

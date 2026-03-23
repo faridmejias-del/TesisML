@@ -1,7 +1,7 @@
 // src/components/PrecioChart.js
 import React, { useState, useEffect, useMemo } from 'react';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
-import precioService from '../services/precioService';
+import { precioService } from 'services';
 
 function PrecioChart({ empresaId, nombreEmpresa }) {
     const [datosOriginales, setDatosOriginales] = useState([]);

@@ -1,6 +1,6 @@
 // src/components/EmpresaTable.js
 import React, { useState, useEffect } from 'react';
-import empresaService from '../services/empresaService';
+import { empresaService } from 'services';
 
 // 1. NUEVO: Ahora recibimos 'onSelect' como parámetro (desestructuración)
 function EmpresaTable({ onSelect }) { 

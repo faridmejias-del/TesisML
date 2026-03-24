@@ -1,8 +1,21 @@
 import axios from 'axios';
 
-// Cambia el puerto si tu backend usa el 5000 o el 8000
-const API = axios.create({
-    baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8000', 
+const api = axios.create({
+    baseURL: 'http://localhost:8000/api/v1',
 });
 
-export default API;
+// Interceptor de Peticiones: Se ejecuta ANTES de que el frontend envíe algo al backend
+api.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
+    }
+);
+
+export default api;

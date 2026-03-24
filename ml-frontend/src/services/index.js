@@ -8,3 +8,4 @@ export { default as precioService } from './precioService';
 export { default as resultadoService } from './resultadoService';
 export { default as rolService } from './rolService';
 export { default as sectorService } from './sectorService';
+export { default as authService } from './authService';

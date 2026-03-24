@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Login, Home, Panel } from 'pages'; 
 import { UserLayout, AdminLayout } from 'layouts'; 
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthProvider, useAuth } from 'context';
 
 // Componente Guardián: Evalúa si puedes entrar o te expulsa
 const RutaProtegida = ({ children, rolPermitido }) => {

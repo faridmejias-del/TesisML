@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { empresaService } from 'services'; 
 
-function EmpresaTable({ onSelect }) { 
+function EmpresaTable({ onSelect, esAdmin = false, onEdit, onDelete }) {
     const [empresas, setEmpresas] = useState([]);
     const [sectores, setSectores] = useState([]);
     const [sectorSeleccionado, setSectorSeleccionado] = useState('todos'); 
@@ -46,7 +46,9 @@ function EmpresaTable({ onSelect }) {
             <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '1rem', flexWrap: 'wrap'}}>
                 <div>
                     <h3 style={{margin: '0 0 5px 0', color: '#1f2937'}}>Listado de Empresas Activas</h3>
-                    <p style={{margin: 0, fontSize: '0.85rem', color: '#6b7280'}}>* Haz clic en una fila para ver su análisis gráfico.</p>
+                    <p style={{margin: 0, fontSize: '0.85rem', color: '#6b7280'}}>
+                        {esAdmin ? "* Gestión administrativa de activos." : "* Haz clic en una fila para ver su análisis gráfico."}
+                    </p>
                 </div>
             </div>
 
@@ -110,7 +112,9 @@ function EmpresaTable({ onSelect }) {
                         <tr style={estilos.header}>
                             <th style={{ ...estilos.th, width: '30%' }}>Ticker</th>
                             <th style={{ ...estilos.th, width: '40%' }}>Nombre de Empresa</th>
-                            <th style={{ ...estilos.th, width: '30%' }}>Sector</th> 
+                            <th style={{ ...estilos.th, width: '30%' }}>Sector</th>
+                            {/* 2. Cabecera condicional para Admin */}
+                            {esAdmin && <th style={{ ...estilos.th, width: '20%', textAlign: 'center' }}>Acciones</th>}
                         </tr>
                     </thead>
                     <tbody>
@@ -128,6 +132,23 @@ function EmpresaTable({ onSelect }) {
                                     <td style={estilos.td}>
                                         <span style={estilos.sectorBadge}>{emp.NombreSector}</span>
                                     </td>
+                                    {/* 3. Celdas condicionales para Admin */}
+                                    {esAdmin && (
+                                        <td style={{...estilos.td, textAlign: 'center'}}>
+                                            <button 
+                                                onClick={(e) => { e.stopPropagation(); onEdit(emp); }} 
+                                                style={estilos.btnAccionEdit}
+                                            >
+                                                ✏️
+                                            </button>
+                                            <button 
+                                                onClick={(e) => { e.stopPropagation(); onDelete(emp.IdEmpresa); }} 
+                                                style={estilos.btnAccionDelete}
+                                            >
+                                                🗑️
+                                            </button>
+                                        </td>
+                                    )}
                                 </tr>
                             ))
                         ) : (
@@ -159,7 +180,10 @@ const estilos = {
     td: { padding: '12px 15px', fontSize: '0.95rem', color: '#334155' },
     fila: { borderBottom: '1px solid #f1f5f9', cursor: 'pointer', transition: 'background-color 0.2s ease' }, 
     ticker: { fontWeight: '800', color: '#0f172a' },
-    sectorBadge: { backgroundColor: '#e0e7ff', color: '#4338ca', padding: '4px 10px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 'bold' }
+    sectorBadge: { backgroundColor: '#e0e7ff', color: '#4338ca', padding: '4px 10px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 'bold' },
+
+    btnAccionEdit: { background: 'none', border: 'none', cursor: 'pointer', marginRight: '10px', fontSize: '1.1rem' },
+    btnAccionDelete: { background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.1rem' }
 };
 
 export default EmpresaTable;

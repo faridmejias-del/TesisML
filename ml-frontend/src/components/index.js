@@ -3,6 +3,7 @@
 export { default as AdminPanel } from './AdminPanel';
 export { default as AnalisisIAButton } from './AnalisisIAButton';
 export { default as AuthForm } from './AuthForm';
+export { default as EmpresaForm } from './EmpresaForm'; 
 export { default as EmpresaTable } from './EmpresaTable';
 export { default as EntrenamientoSelector } from './EntrenamientoSelector';
 export { default as PrecioChart } from './PrecioChart';

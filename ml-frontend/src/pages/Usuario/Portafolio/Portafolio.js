@@ -9,7 +9,7 @@ import {
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
-import PlaylistRemoveIcon from '@mui/icons-material/PlaylistRemove'; // Nuevo icono para eliminar masivo
+import PlaylistRemoveIcon from '@mui/icons-material/PlaylistRemove'; 
 
 import { useAuth } from '../../../context';
 import { empresaService, portafolioService } from '../../../services';
@@ -28,7 +28,10 @@ export default function Portafolio() {
   const [procesandoMasivo, setProcesandoMasivo] = useState(false);
   const [sectorFiltro, setSectorFiltro] = useState('todos');
   
-  // ESTADOS DE SELECCIÓN (Separados para no mezclarlos)
+  // Estado para el filtro de Mis Empresas
+  const [sectorFiltroMis, setSectorFiltroMis] = useState('todos'); 
+  
+  // ESTADOS DE SELECCIÓN
   const [seleccionadasAgregar, setSeleccionadasAgregar] = useState([]);
   const [seleccionadasEliminar, setSeleccionadasEliminar] = useState([]);
 
@@ -69,7 +72,6 @@ export default function Portafolio() {
       setEmpresasDisponibles(empresasFueraDePortafolio);
       setSectoresDisponibles(Array.from(sectoresSet).sort()); 
       
-      // Limpiamos TODAS las selecciones al recargar
       setSeleccionadasAgregar([]); 
       setSeleccionadasEliminar([]);
     } catch (error) {
@@ -89,6 +91,10 @@ export default function Portafolio() {
   useEffect(() => {
     setPaginaDisponibles(1);
   }, [sectorFiltro]);
+
+  useEffect(() => {
+    setPaginaMis(1);
+  }, [sectorFiltroMis]);
 
   // --- FUNCIONES DE AGREGAR / ELIMINAR INDIVIDUALES ---
 
@@ -147,7 +153,7 @@ export default function Portafolio() {
     }
   };
 
-  // --- NUEVA LÓGICA: SELECCIÓN MÚLTIPLE PARA ELIMINAR ---
+  // --- LÓGICA: SELECCIÓN MÚLTIPLE PARA ELIMINAR ---
 
   const alternarSeleccionEliminar = (idPortafolio) => {
     setSeleccionadasEliminar(prev => 
@@ -170,7 +176,7 @@ export default function Portafolio() {
       
       toast.success(`${seleccionadasEliminar.length} empresas removidas correctamente`, { id: promesaNotificacion });
       cargarDatos();
-      setPaginaMis(1); // Volvemos a la primera página por seguridad
+      setPaginaMis(1); 
       setProcesandoMasivo(false);
     } catch (error) {
       toast.error("Hubo un error al remover algunas empresas", { id: promesaNotificacion });
@@ -178,14 +184,19 @@ export default function Portafolio() {
     }
   };
 
-
-  // --- LÓGICA DE PAGINACIÓN ---
+  // --- LÓGICA DE FILTRADO Y PAGINACIÓN ---
   
+  const sectoresMisEmpresas = Array.from(new Set(misEmpresas.map(emp => emp.NombreSector))).sort();
+
+  const misEmpresasFiltradas = sectorFiltroMis === 'todos' 
+    ? misEmpresas 
+    : misEmpresas.filter(emp => emp.NombreSector === sectorFiltroMis);
+
   const empresasDisponiblesFiltradas = sectorFiltro === 'todos' 
     ? empresasDisponibles 
     : empresasDisponibles.filter(emp => emp.NombreSector === sectorFiltro);
 
-  const misEmpresasPaginadas = misEmpresas.slice(
+  const misEmpresasPaginadas = misEmpresasFiltradas.slice(
     (paginaMis - 1) * ITEMS_POR_PAGINA, 
     paginaMis * ITEMS_POR_PAGINA
   );
@@ -195,7 +206,7 @@ export default function Portafolio() {
     paginaDisponibles * ITEMS_POR_PAGINA
   );
 
-  const totalPaginasMis = Math.ceil(misEmpresas.length / ITEMS_POR_PAGINA);
+  const totalPaginasMis = Math.ceil(misEmpresasFiltradas.length / ITEMS_POR_PAGINA);
   const totalPaginasDisponibles = Math.ceil(empresasDisponiblesFiltradas.length / ITEMS_POR_PAGINA);
 
 
@@ -215,32 +226,53 @@ export default function Portafolio() {
         
         {/* LISTA 1: MIS EMPRESAS */}
         <Grid item xs={12} md={6}>
-          <Paper elevation={2} sx={{ p: { xs: 1.5, sm: 2, md: 3 }, borderRadius: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <Paper elevation={2} sx={{ p: { xs: 1.5, sm: 2, md: 3 }, borderRadius: 3, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             
-            {/* CABECERA RESPONSIVA IZQUIERDA (Añadido botón de remover múltiples) */}
-            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, justifyContent: {xs: 'flex-start', lg: 'space-between'}, alignItems: { xs: 'stretch', lg: 'center' }, gap: 2, mb: 2 }}>
+            {/* CABECERA MODIFICADA: Título arriba, controles abajo */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 2 }}>
                 <Typography variant="h6" fontWeight="bold" sx={{ color: 'primary.main' }}>
-                Empresas en Seguimiento ({misEmpresas.length})
+                Empresas en Seguimiento ({misEmpresasFiltradas.length})
                 </Typography>
                 
-                <Button 
-                    variant="outlined" 
-                    color="error" 
-                    startIcon={<PlaylistRemoveIcon fontSize="small" />}
-                    disabled={seleccionadasEliminar.length === 0 || procesandoMasivo}
-                    onClick={manejarEliminarMultiples}
-                    size="small"
-                    sx={{ borderRadius: 2, fontWeight: 'bold', display: 'flex' }}
-                >
-                    Remover ({seleccionadasEliminar.length})
-                </Button>
+                {misEmpresas.length > 0 && (
+                    <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+                        {/* El flexGrow: 1 hace que el selector tome todo el ancho sobrante */}
+                        <FormControl size="small" sx={{ flexGrow: 1 }}>
+                            <InputLabel>Filtrar por Sector</InputLabel>
+                            <Select
+                                value={sectorFiltroMis}
+                                label="Filtrar por Sector"
+                                onChange={(e) => setSectorFiltroMis(e.target.value)}
+                            >
+                                <MenuItem value="todos">Todos los sectores</MenuItem>
+                                {sectoresMisEmpresas.map(sector => (
+                                    <MenuItem key={sector} value={sector}>{sector}</MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+
+                        <Button 
+                            variant="outlined" 
+                            color="error" 
+                            startIcon={<PlaylistRemoveIcon fontSize="small" />}
+                            disabled={seleccionadasEliminar.length === 0 || procesandoMasivo}
+                            onClick={manejarEliminarMultiples}
+                            size="small"
+                            sx={{ borderRadius: 2, fontWeight: 'bold', display: 'flex', whiteSpace: 'nowrap' }}
+                        >
+                            Remover ({seleccionadasEliminar.length})
+                        </Button>
+                    </Box>
+                )}
             </Box>
 
             <Divider sx={{ mb: 2 }} />
             
             <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', minHeight: '380px' }}>
                 {misEmpresas.length === 0 ? (
-                <Typography color="text.secondary">No tienes empresas en tu portafolio aún.</Typography>
+                    <Typography color="text.secondary">No tienes empresas en tu portafolio aún.</Typography>
+                ) : misEmpresasFiltradas.length === 0 ? (
+                    <Typography color="text.secondary">No tienes empresas en seguimiento para este sector.</Typography>
                 ) : (
                 <List disablePadding sx={{ flexGrow: 1 }}>
                     {misEmpresasPaginadas.map((emp) => {
@@ -250,7 +282,6 @@ export default function Portafolio() {
                         <ListItem 
                             key={emp.IdPortafolio}
                             sx={{ 
-                                // Color rojo súper sutil si está marcada para eliminar
                                 bgcolor: estaSeleccionadaParaEliminar ? 'rgba(239, 68, 68, 0.08)' : 'background.default', 
                                 mb: 1, 
                                 borderRadius: 2, 
@@ -263,13 +294,12 @@ export default function Portafolio() {
                             </IconButton>
                             }
                         >
-                            {/* CHECKBOX DE ELIMINACIÓN */}
                             <Checkbox
                                 edge="start"
                                 checked={estaSeleccionadaParaEliminar}
                                 onChange={() => alternarSeleccionEliminar(emp.IdPortafolio)}
                                 size="small"
-                                color="error" // Hace que la casilla sea roja al marcarla
+                                color="error" 
                                 sx={{ p: {xs: 0.5, md: 1} }}
                             />
                             <ListItemText 
@@ -284,7 +314,6 @@ export default function Portafolio() {
                 )}
             </Box>
 
-            {/* CONTROLES DE PAGINACIÓN IZQUIERDOS */}
             {totalPaginasMis > 1 && (
                 <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2, pt: 2, borderTop: '1px solid #f1f5f9' }}>
                     <Pagination 
@@ -301,45 +330,46 @@ export default function Portafolio() {
 
         {/* LISTA 2: EMPRESAS DISPONIBLES */}
         <Grid item xs={12} md={6}>
-          <Paper elevation={2} sx={{ p: { xs: 1.5, sm: 2, md: 3 }, borderRadius: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <Paper elevation={2} sx={{ p: { xs: 1.5, sm: 2, md: 3 }, borderRadius: 3, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             
-            {/* CABECERA RESPONSIVA DERECHA */}
-            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, justifyContent: {xs: 'flex-start', lg: 'space-between'}, alignItems: { xs: 'stretch', lg: 'center' }, gap: 2, mb: 2 }}>
+            {/* CABECERA MODIFICADA: Título arriba, controles abajo */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 2 }}>
                 <Typography variant="h6" fontWeight="bold" sx={{ color: 'text.secondary' }}>
                 Mercado Disponible
                 </Typography>
                 
-                <FormControl size="small" sx={{ minWidth: {xs: '100%', lg: 180} }}>
-                    <InputLabel>Filtrar por Sector</InputLabel>
-                    <Select
-                        value={sectorFiltro}
-                        label="Filtrar por Sector"
-                        onChange={(e) => setSectorFiltro(e.target.value)}
-                    >
-                        <MenuItem value="todos">Todos los sectores</MenuItem>
-                        {sectoresDisponibles.map(sector => (
-                            <MenuItem key={sector} value={sector}>{sector}</MenuItem>
-                        ))}
-                    </Select>
-                </FormControl>
-            </Box>
+                <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+                    {/* El flexGrow: 1 hace que el selector tome todo el ancho sobrante */}
+                    <FormControl size="small" sx={{ flexGrow: 1 }}>
+                        <InputLabel>Filtrar por Sector</InputLabel>
+                        <Select
+                            value={sectorFiltro}
+                            label="Filtrar por Sector"
+                            onChange={(e) => setSectorFiltro(e.target.value)}
+                        >
+                            <MenuItem value="todos">Todos los sectores</MenuItem>
+                            {sectoresDisponibles.map(sector => (
+                                <MenuItem key={sector} value={sector}>{sector}</MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
 
-            {/* BOTÓN DE AGREGAR SELECCIONADAS RESPONSIVO */}
-            <Button 
-                variant="contained" 
-                color="secondary" 
-                startIcon={<PlaylistAddIcon fontSize="small" />}
-                disabled={seleccionadasAgregar.length === 0 || procesandoMasivo}
-                onClick={manejarAgregarMultiples}
-                size="small"
-                sx={{ mb: 2, borderRadius: 2, fontWeight: 'bold', display: 'flex' }}
-            >
-                Agregar ({seleccionadasAgregar.length})
-            </Button>
+                    <Button 
+                        variant="contained" 
+                        color="secondary" 
+                        startIcon={<PlaylistAddIcon fontSize="small" />}
+                        disabled={seleccionadasAgregar.length === 0 || procesandoMasivo}
+                        onClick={manejarAgregarMultiples}
+                        size="small"
+                        sx={{ borderRadius: 2, fontWeight: 'bold', display: 'flex', whiteSpace: 'nowrap' }}
+                    >
+                        Agregar ({seleccionadasAgregar.length})
+                    </Button>
+                </Box>
+            </Box>
 
             <Divider sx={{ mb: 2 }} />
 
-            {/* LISTADO DE DISPONIBLES */}
             <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', minHeight: '380px' }}>
                 {empresasDisponiblesFiltradas.length === 0 ? (
                 <Typography color="text.secondary">
@@ -384,7 +414,6 @@ export default function Portafolio() {
                 )}
             </Box>
 
-            {/* CONTROLES DE PAGINACIÓN DERECHOS */}
             {totalPaginasDisponibles > 1 && (
                 <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2, pt: 2, borderTop: '1px solid #f1f5f9' }}>
                     <Pagination 

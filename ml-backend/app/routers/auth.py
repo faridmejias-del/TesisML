@@ -19,8 +19,11 @@ from app.core.limiter import limiter
 
 router = APIRouter(prefix="/api/v1/auth", tags=["Autenticación"])
 
+##################################################
+#################### NO TOCAR ####################
+##################################################
 @router.post("/login")
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+def login(response: Response, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     usuario = db.query(Usuario).filter(Usuario.Email == form_data.username).first()
 
     if not usuario or not verify_password(form_data.password, usuario.PasswordU):
@@ -34,8 +37,26 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Usuario desactivado. Por favor, verifica tu correo electrónico o contacta al administrador."
         )
+        
+    # 1. ¡ESTA LÍNEA FALTABA! Generamos el token de acceso
     access_token = create_access_token(data={"sub": str(usuario.IdUsuario), "rol": usuario.IdRol})
-    return {"access_token": access_token, "token_type": "bearer"}
+
+    # 2. Crear la cookie HttpOnly con el token generado
+    response.set_cookie(
+        key="access_token",
+        value=f"Bearer {access_token}",
+        httponly=True,  # Evita que JS acceda a la cookie (seguridad XSS)
+        samesite="lax",
+        max_age=3600    # 1 hora, ajusta según tu expiración
+    )
+    
+    # IMPORTANTE: Si tu frontend antes usaba la respuesta del login para guardar
+    # datos del usuario en el contexto (ej. nombre, rol), asegúrate de enviarlos aquí.
+    return {
+        "message": "Login exitoso", 
+        "token_type": "bearer",
+        "access_token": access_token # Puedes mandarlo también si algún componente aún lo busca en el JSON
+    }
 
 @router.get("/verificar-email/{token}")
 def verificar_email(token: str, db: Session = Depends(get_db)):

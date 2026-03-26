@@ -39,10 +39,10 @@ export default function Mercado() {
       )}
 
         {/* SECCIÓN 1: Gráficos de Análisis y Resultados IA */}
-        <Grid container spacing={3} alignItems="center"  justify="center">
+        <Grid container spacing={3} alignItems="center"  justifyContent="center">
             
             {/* Gráfico de Precios */}
-            <Grid item xs={12} lg={8} xl={9}>
+            <Grid size={{ xs: 12, lg: 8 }}>
                 <Paper elevation={2} sx={{ 
                     p: {xs: 1, md: 2}, 
                     borderRadius: 3, 
@@ -59,7 +59,7 @@ export default function Mercado() {
             </Grid>
             
             {/* Panel de Resultados IA */}
-            <Grid item xs={12} lg={4} xl={3}>
+            <Grid size={{ xs: 12, lg: 4, xl: 3 }}>
             <Paper elevation={2} sx={{ 
                 p: {xs: 1, md: 2}, 
                 borderRadius: 3, 

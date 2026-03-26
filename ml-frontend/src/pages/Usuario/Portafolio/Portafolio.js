@@ -3,13 +3,15 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Box, Typography, Paper, Grid, List, ListItem, ListItemText, 
   IconButton, Chip, Divider, Checkbox, Button, FormControl, 
-  InputLabel, Select, MenuItem, CircularProgress, Pagination 
+  InputLabel, Select, MenuItem, CircularProgress, Pagination,
+  TextField, InputAdornment 
 } from '@mui/material';
 
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
 import PlaylistRemoveIcon from '@mui/icons-material/PlaylistRemove'; 
+import SearchIcon from '@mui/icons-material/Search';
 
 import { useAuth } from '../../../context';
 import { empresaService, portafolioService } from '../../../services';
@@ -26,8 +28,12 @@ export default function Portafolio() {
   // Estados de la interfaz
   const [cargando, setCargando] = useState(true);
   const [procesandoMasivo, setProcesandoMasivo] = useState(false);
+  
+  // ESTADOS DE FILTROS Y BÚSQUEDA
   const [sectorFiltro, setSectorFiltro] = useState('todos');
   const [sectorFiltroMis, setSectorFiltroMis] = useState('todos'); 
+  const [busquedaDisponibles, setBusquedaDisponibles] = useState('');
+  const [busquedaMis, setBusquedaMis] = useState('');
   
   // ESTADOS DE SELECCIÓN
   const [seleccionadasAgregar, setSeleccionadasAgregar] = useState([]);
@@ -86,24 +92,33 @@ export default function Portafolio() {
     }
   }, [usuario, cargarDatos]); 
 
+  // Resetear paginación al escribir o cambiar categoría
   useEffect(() => {
     setPaginaDisponibles(1);
-  }, [sectorFiltro]);
+  }, [sectorFiltro, busquedaDisponibles]);
 
   useEffect(() => {
     setPaginaMis(1);
-  }, [sectorFiltroMis]);
+  }, [sectorFiltroMis, busquedaMis]);
 
-  // --- LÓGICA DE FILTRADO (Se mueve arriba para usarla en "Seleccionar Todo") ---
+  // --- LÓGICA DE BÚSQUEDA Y FILTRADO ---
   const sectoresMisEmpresas = Array.from(new Set(misEmpresas.map(emp => emp.NombreSector))).sort();
 
-  const misEmpresasFiltradas = sectorFiltroMis === 'todos' 
-    ? misEmpresas 
-    : misEmpresas.filter(emp => emp.NombreSector === sectorFiltroMis);
+  const misEmpresasFiltradas = misEmpresas.filter(emp => {
+    const coincideSector = sectorFiltroMis === 'todos' || emp.NombreSector === sectorFiltroMis;
+    const textoBusqueda = busquedaMis.toLowerCase();
+    const coincideBusqueda = emp.NombreEmpresa.toLowerCase().includes(textoBusqueda) || 
+                             emp.Ticket.toLowerCase().includes(textoBusqueda);
+    return coincideSector && coincideBusqueda;
+  });
 
-  const empresasDisponiblesFiltradas = sectorFiltro === 'todos' 
-    ? empresasDisponibles 
-    : empresasDisponibles.filter(emp => emp.NombreSector === sectorFiltro);
+  const empresasDisponiblesFiltradas = empresasDisponibles.filter(emp => {
+    const coincideSector = sectorFiltro === 'todos' || emp.NombreSector === sectorFiltro;
+    const textoBusqueda = busquedaDisponibles.toLowerCase();
+    const coincideBusqueda = emp.NombreEmpresa.toLowerCase().includes(textoBusqueda) || 
+                             emp.Ticket.toLowerCase().includes(textoBusqueda);
+    return coincideSector && coincideBusqueda;
+  });
 
   // --- FUNCIONES DE SELECCIÓN MÚLTIPLE (INDIVIDUAL Y TODO) ---
 
@@ -119,16 +134,13 @@ export default function Portafolio() {
     );
   };
 
-  // NUEVO: Seleccionar TODAS las disponibles según filtro
   const alternarTodasAgregar = () => {
     const idsFiltradas = empresasDisponiblesFiltradas.map(emp => emp.IdEmpresa);
-    const todasSeleccionadas = idsFiltradas.every(id => seleccionadasAgregar.includes(id));
+    const todasSeleccionadas = idsFiltradas.length > 0 && idsFiltradas.every(id => seleccionadasAgregar.includes(id));
 
     if (todasSeleccionadas) {
-        // Deseleccionar todas las de esta categoría
         setSeleccionadasAgregar(prev => prev.filter(id => !idsFiltradas.includes(id)));
     } else {
-        // Seleccionar todas las de esta categoría (manteniendo las de otras categorías si hubiera)
         setSeleccionadasAgregar(prev => {
             const nuevas = idsFiltradas.filter(id => !prev.includes(id));
             return [...prev, ...nuevas];
@@ -136,10 +148,9 @@ export default function Portafolio() {
     }
   };
 
-  // NUEVO: Seleccionar TODAS las de seguimiento según filtro
   const alternarTodasEliminar = () => {
     const idsFiltradas = misEmpresasFiltradas.map(emp => emp.IdPortafolio);
-    const todasSeleccionadas = idsFiltradas.every(id => seleccionadasEliminar.includes(id));
+    const todasSeleccionadas = idsFiltradas.length > 0 && idsFiltradas.every(id => seleccionadasEliminar.includes(id));
 
     if (todasSeleccionadas) {
         setSeleccionadasEliminar(prev => prev.filter(id => !idsFiltradas.includes(id)));
@@ -151,7 +162,6 @@ export default function Portafolio() {
     }
   };
 
-  // --- COMPROBACIONES DE ESTADO PARA LOS CHECKBOXES GLOBALES ---
   const todasEliminarSeleccionadas = misEmpresasFiltradas.length > 0 && misEmpresasFiltradas.every(emp => seleccionadasEliminar.includes(emp.IdPortafolio));
   const algunasEliminarSeleccionadas = misEmpresasFiltradas.some(emp => seleccionadasEliminar.includes(emp.IdPortafolio)) && !todasEliminarSeleccionadas;
 
@@ -248,8 +258,9 @@ export default function Portafolio() {
                 </Typography>
                 
                 {misEmpresas.length > 0 && (
-                    <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
-                        <FormControl size="small" sx={{ flexGrow: 1 }}>
+                    <>
+                        {/* 1. FILTRO DE SECTOR (Arriba) */}
+                        <FormControl size="small" fullWidth>
                             <InputLabel>Filtrar por Sector</InputLabel>
                             <Select value={sectorFiltroMis} label="Filtrar por Sector" onChange={(e) => setSectorFiltroMis(e.target.value)}>
                                 <MenuItem value="todos">Todos los sectores</MenuItem>
@@ -257,33 +268,46 @@ export default function Portafolio() {
                             </Select>
                         </FormControl>
 
-                        <Button 
-                            variant="outlined" color="error" startIcon={<PlaylistRemoveIcon fontSize="small" />}
-                            disabled={seleccionadasEliminar.length === 0 || procesandoMasivo}
-                            onClick={manejarEliminarMultiples} size="small"
-                            sx={{ borderRadius: 2, fontWeight: 'bold', display: 'flex', whiteSpace: 'nowrap' }}
-                        >
-                            Remover ({seleccionadasEliminar.length})
-                        </Button>
-                    </Box>
+                        {/* 2. BUSCADOR Y BOTÓN (Abajo) */}
+                        <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+                            <TextField
+                                size="small"
+                                placeholder="Buscar..."
+                                value={busquedaMis}
+                                onChange={(e) => setBusquedaMis(e.target.value)}
+                                sx={{ flex: '1 1 140px' }}
+                                InputProps={{
+                                    startAdornment: (
+                                        <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment>
+                                    ),
+                                }}
+                            />
+
+                            <Button 
+                                variant="outlined" color="error" startIcon={<PlaylistRemoveIcon fontSize="small" />}
+                                disabled={seleccionadasEliminar.length === 0 || procesandoMasivo}
+                                onClick={manejarEliminarMultiples} size="small"
+                                sx={{ borderRadius: 2, fontWeight: 'bold', flex: '0 0 auto', whiteSpace: 'nowrap' }}
+                            >
+                                Remover ({seleccionadasEliminar.length})
+                            </Button>
+                        </Box>
+                    </>
                 )}
             </Box>
 
             <Divider sx={{ mb: 1 }} />
             
             <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', minHeight: '380px' }}>
-                {/* CHECKBOX GLOBAL: Seleccionar todo (Izquierda) */}
                 {misEmpresasFiltradas.length > 0 && (
                     <Box sx={{ display: 'flex', alignItems: 'center', px: 1, py: 0.5, bgcolor: 'rgba(0,0,0,0.02)', borderRadius: 1, mb: 1 }}>
                         <Checkbox
-                            size="small"
-                            color="error"
-                            checked={todasEliminarSeleccionadas}
-                            indeterminate={algunasEliminarSeleccionadas}
+                            size="small" color="error"
+                            checked={todasEliminarSeleccionadas} indeterminate={algunasEliminarSeleccionadas}
                             onChange={alternarTodasEliminar}
                         />
                         <Typography variant="body2" fontWeight="bold" color="text.secondary">
-                            Seleccionar todas ({misEmpresasFiltradas.length})
+                            Seleccionar todas las visibles ({misEmpresasFiltradas.length})
                         </Typography>
                     </Box>
                 )}
@@ -291,7 +315,7 @@ export default function Portafolio() {
                 {misEmpresas.length === 0 ? (
                     <Typography color="text.secondary">No tienes empresas en tu portafolio aún.</Typography>
                 ) : misEmpresasFiltradas.length === 0 ? (
-                    <Typography color="text.secondary">No tienes empresas en seguimiento para este sector.</Typography>
+                    <Typography color="text.secondary">No se encontraron empresas con esa búsqueda o sector.</Typography>
                 ) : (
                 <List disablePadding sx={{ flexGrow: 1 }}>
                     {misEmpresasPaginadas.map((emp) => {
@@ -342,23 +366,38 @@ export default function Portafolio() {
             
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 2 }}>
                 <Typography variant="h6" fontWeight="bold" sx={{ color: 'text.secondary' }}>
-                Mercado Disponible
+                Mercado Disponible ({empresasDisponiblesFiltradas.length})
                 </Typography>
                 
-                <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
-                    <FormControl size="small" sx={{ flexGrow: 1 }}>
-                        <InputLabel>Filtrar por Sector</InputLabel>
-                        <Select value={sectorFiltro} label="Filtrar por Sector" onChange={(e) => setSectorFiltro(e.target.value)}>
-                            <MenuItem value="todos">Todos los sectores</MenuItem>
-                            {sectoresDisponibles.map(sector => (<MenuItem key={sector} value={sector}>{sector}</MenuItem>))}
-                        </Select>
-                    </FormControl>
+                {/* 1. FILTRO DE SECTOR (Arriba) */}
+                <FormControl size="small" fullWidth>
+                    <InputLabel>Filtrar por Sector</InputLabel>
+                    <Select value={sectorFiltro} label="Filtrar por Sector" onChange={(e) => setSectorFiltro(e.target.value)}>
+                        <MenuItem value="todos">Todos los sectores</MenuItem>
+                        {sectoresDisponibles.map(sector => (<MenuItem key={sector} value={sector}>{sector}</MenuItem>))}
+                    </Select>
+                </FormControl>
+
+                {/* 2. BUSCADOR Y BOTÓN (Abajo) */}
+                <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+                    <TextField
+                        size="small"
+                        placeholder="Buscar..."
+                        value={busquedaDisponibles}
+                        onChange={(e) => setBusquedaDisponibles(e.target.value)}
+                        sx={{ flex: '1 1 140px' }}
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment>
+                            ),
+                        }}
+                    />
 
                     <Button 
                         variant="contained" color="secondary" startIcon={<PlaylistAddIcon fontSize="small" />}
                         disabled={seleccionadasAgregar.length === 0 || procesandoMasivo}
                         onClick={manejarAgregarMultiples} size="small"
-                        sx={{ borderRadius: 2, fontWeight: 'bold', display: 'flex', whiteSpace: 'nowrap' }}
+                        sx={{ borderRadius: 2, fontWeight: 'bold', flex: '0 0 auto', whiteSpace: 'nowrap' }}
                     >
                         Agregar ({seleccionadasAgregar.length})
                     </Button>
@@ -368,26 +407,23 @@ export default function Portafolio() {
             <Divider sx={{ mb: 1 }} />
 
             <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', minHeight: '380px' }}>
-                {/* CHECKBOX GLOBAL: Seleccionar todo (Derecha) */}
                 {empresasDisponiblesFiltradas.length > 0 && (
                     <Box sx={{ display: 'flex', alignItems: 'center', px: 1, py: 0.5, bgcolor: 'rgba(0,0,0,0.02)', borderRadius: 1, mb: 1 }}>
                         <Checkbox
-                            size="small"
-                            color="primary"
-                            checked={todasAgregarSeleccionadas}
-                            indeterminate={algunasAgregarSeleccionadas}
+                            size="small" color="primary"
+                            checked={todasAgregarSeleccionadas} indeterminate={algunasAgregarSeleccionadas}
                             onChange={alternarTodasAgregar}
                         />
                         <Typography variant="body2" fontWeight="bold" color="text.secondary">
-                            Seleccionar todas ({empresasDisponiblesFiltradas.length})
+                            Seleccionar todas las visibles ({empresasDisponiblesFiltradas.length})
                         </Typography>
                     </Box>
                 )}
 
-                {empresasDisponiblesFiltradas.length === 0 ? (
-                <Typography color="text.secondary">
-                    {empresasDisponibles.length === 0 ? "Ya sigues a todas las empresas disponibles." : "No hay empresas disponibles en este sector."}
-                </Typography>
+                {empresasDisponibles.length === 0 ? (
+                <Typography color="text.secondary">Ya sigues a todas las empresas disponibles.</Typography>
+                ) : empresasDisponiblesFiltradas.length === 0 ? (
+                <Typography color="text.secondary">No se encontraron empresas con esa búsqueda o sector.</Typography>
                 ) : (
                 <List disablePadding sx={{ flexGrow: 1 }}>
                     {disponiblesPaginadas.map((emp) => {

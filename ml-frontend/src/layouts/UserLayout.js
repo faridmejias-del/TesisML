@@ -128,17 +128,23 @@ export default function UserLayout() {
       </Box>
 
       {/* Forzamos el ancho exacto del contenido */}
+      {/* CONTENIDO PRINCIPAL */}
       <Box 
         component="main" 
         sx={{ 
           flexGrow: 1, 
+          // p: Padding. Reducido en móvil, amplio en PC.
           p: { xs: 2, sm: 3, lg: 4 }, 
-          width: { xs: '100%', lg: `calc(100% - ${drawerWidth}px)` },
+          // Ancho: Ocupa todo el espacio sobrante que le deja el menú flexGrow
+          width: '100%', 
+          // Altura: Ocupa toda la pantalla
+          height: '100vh',
           backgroundColor: 'background.default', 
-          overflowY: 'auto' 
+          overflowY: 'auto',
+          overflowX: 'hidden' // <-- ESTO EVITA QUE SE DESBORDE HACIA LA DERECHA
         }}
       >
-        {/* Este Toolbar fantasma empuja tu contenido exactamente por debajo de la barra superior */}
+        {/* Este Toolbar fantasma empuja tu contenido exactamente por debajo de la barra superior en móviles */}
         <Toolbar sx={{ display: { lg: 'none' } }} />
         
         <Outlet />

@@ -3,7 +3,8 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request, Response
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import timedelta
-
+from fastapi.responses import RedirectResponse
+from jose import JWTError,jwt
 from app.db.sessions import get_db
 from app.core.config import settings
 from app.schemas.schemas import Token
@@ -52,3 +53,29 @@ def login(
     
     # Ya no devolvemos el token, solo un mensaje de éxito
     return {"message": "Autenticación exitosa"}
+
+@router.get("/verificar-email/{token}")
+def verificar_email(token: str, db: Session = Depends(get_db)):
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        usuario_id: str = payload.get("sub")
+        token_type: str = payload.get("type")
+        
+        if usuario_id is None or token_type != "email_verification":
+            raise HTTPException(status_code=400, detail="Token inválido o corrupto.")
+            
+    except JWTError:
+        raise HTTPException(status_code=400, detail="El enlace ha expirado o no es válido.")
+
+    usuario = db.query(Usuario).filter(Usuario.IdUsuario == int(usuario_id)).first()
+    
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado.")
+        
+    if usuario.Activo:
+        return RedirectResponse(url="http://localhost:3000/login?mensaje=ya_activo")
+
+    usuario.Activo = True
+    db.commit()
+    
+    return RedirectResponse(url="http://localhost:3000/login?mensaje=verificado")

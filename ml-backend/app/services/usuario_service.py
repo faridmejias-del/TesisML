@@ -6,6 +6,8 @@ from app.schemas.schemas import UsuarioCreate, UsuarioUpdate
 from app.exceptions import ResourceNotFoundError, DuplicateResourceError, InvalidDataError
 from app.utils.security import hash_password, verify_password
 import re
+from app.utils.security import create_access_token
+from datetime import timedelta
 
 class UsuarioService: 
     # =========================================================================
@@ -61,13 +63,29 @@ class UsuarioService:
             Email=usuario.Email,
             PasswordU=hash_password(usuario.PasswordU),
             IdRol=usuario.IdRol,
-            Activo=True,                      
+            Activo=False,                      
             FechaCreacion=datetime.utcnow(),  
         )
         
         db.add(db_usuario)
         db.commit()
         db.refresh(db_usuario)
+
+        #Logica de verificacion
+        token_verificacion = create_access_token(
+            data={"sub": str(db_usuario.IdUsuario), "type": "email_verification"},
+            expires_delta=timedelta(hours=24)
+        )
+
+        enlace =f"http://localhost:8000/api/v1/auth/verificar-email/{token_verificacion}"
+
+        from app.utils.email import enviar_correo
+        enviar_correo(
+            destino = db_usuario.Email,
+            asunto = "Bienvenido a TesisML - Verifica tu cuenta",
+            mensaje = f"Hola {db_usuario.Nombre} {db_usuario.Apellido} \n\nPor favor verifica tu cuenta haciendo clic en el siguiente enlace: \n{enlace} \n\nEste enlace expira en 24 horas"
+            )
+
         return db_usuario
     
     @staticmethod

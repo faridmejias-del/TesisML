@@ -1,5 +1,5 @@
 // src/components/AuthForm.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context';
 import { 
     Box, 
@@ -15,11 +15,12 @@ import EmailIcon from '@mui/icons-material/Email';
 import LockIcon from '@mui/icons-material/Lock';
 import PersonIcon from '@mui/icons-material/Person';
 
-function AuthForm() {
+// Agregamos la prop modoInicialRegistro
+function AuthForm({ modoInicialRegistro = false }) {
     const { login, registro } = useAuth(); 
     
-    // Estado para alternar entre Login y Registro
-    const [esRegistro, setEsRegistro] = useState(false);
+    // El estado inicial ahora depende de lo que le diga Landing.js
+    const [esRegistro, setEsRegistro] = useState(modoInicialRegistro);
     
     // Estados de los campos
     const [nombre, setNombre] = useState('');
@@ -29,6 +30,12 @@ function AuthForm() {
     
     const [error, setError] = useState('');
     const [cargando, setCargando] = useState(false);
+
+    // Si la prop cambia (el usuario hace clic en el otro botón del Landing), actualizamos el estado
+    useEffect(() => {
+        setEsRegistro(modoInicialRegistro);
+        setError(''); // Limpiamos errores si cambia de modo
+    }, [modoInicialRegistro]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -52,78 +59,43 @@ function AuthForm() {
         <Box 
             component="form" 
             onSubmit={handleSubmit} 
-            sx={{ 
-                display: 'flex', 
-                flexDirection: 'column', 
-                gap: 2.5, 
-                width: '100%',
-                mt: 1
-            }}
+            sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, width: '100%', mt: 1 }}
         >
             <Typography variant="h5" align="center" fontWeight="900" color="text.primary">
                 {esRegistro ? 'Crear una Cuenta' : '¡Hola de nuevo!'}
             </Typography>
 
-            {/* Campos extras solo para el Registro */}
             {esRegistro && (
                 <Box sx={{ display: 'flex', gap: 2 }}>
                     <TextField 
-                        label="Nombre" 
-                        variant="outlined" 
-                        fullWidth 
-                        required 
-                        value={nombre} 
-                        onChange={(e) => setNombre(e.target.value)}
+                        label="Nombre" variant="outlined" fullWidth required 
+                        value={nombre} onChange={(e) => setNombre(e.target.value)}
                         InputProps={{
                             startAdornment: (
-                                <InputAdornment position="start">
-                                    <PersonIcon color="action" fontSize="small" />
-                                </InputAdornment>
+                                <InputAdornment position="start"><PersonIcon color="action" fontSize="small" /></InputAdornment>
                             ),
                         }}
                     />
                     <TextField 
-                        label="Apellido" 
-                        variant="outlined" 
-                        fullWidth 
-                        required 
-                        value={apellido} 
-                        onChange={(e) => setApellido(e.target.value)}
+                        label="Apellido" variant="outlined" fullWidth required 
+                        value={apellido} onChange={(e) => setApellido(e.target.value)}
                     />
                 </Box>
             )}
 
             <TextField 
-                label="Correo Electrónico" 
-                type="email" 
-                variant="outlined" 
-                fullWidth 
-                required 
-                value={email} 
-                onChange={(e) => setEmail(e.target.value)} 
+                label="Correo Electrónico" type="email" variant="outlined" fullWidth required 
+                value={email} onChange={(e) => setEmail(e.target.value)} 
                 InputProps={{
-                    startAdornment: (
-                        <InputAdornment position="start">
-                            <EmailIcon color="action" />
-                        </InputAdornment>
-                    ),
+                    startAdornment: (<InputAdornment position="start"><EmailIcon color="action" /></InputAdornment>),
                 }}
             />
             
             <TextField 
-                label="Contraseña" 
-                type="password" 
-                variant="outlined" 
-                fullWidth 
-                required 
-                value={password} 
-                onChange={(e) => setPassword(e.target.value)} 
+                label="Contraseña" type="password" variant="outlined" fullWidth required 
+                value={password} onChange={(e) => setPassword(e.target.value)} 
                 InputProps={{
-                    startAdornment: (
-                        <InputAdornment position="start">
-                            <LockIcon color="action" />
-                        </InputAdornment>
-                    ),
+                    startAdornment: (<InputAdornment position="start"><LockIcon color="action" /></InputAdornment>),
                 }}
             />
 
@@ -134,29 +106,17 @@ function AuthForm() {
             )}
 
             <Button 
-                type="submit" 
-                variant="contained" 
-                color="primary" 
-                size="large" 
-                fullWidth 
-                disabled={cargando}
+                type="submit" variant="contained" color="primary" size="large" fullWidth disabled={cargando}
                 sx={{ py: 1.5, mt: 1, fontWeight: 'bold', borderRadius: 2, boxShadow: 3 }}
             >
                 {cargando ? <CircularProgress size={24} color="inherit" /> : (esRegistro ? 'Registrarse' : 'Ingresar al sistema')}
             </Button>
 
-            {/* Botón para cambiar entre modos */}
             <Typography align="center" variant="body2" sx={{ mt: 1 }}>
                 {esRegistro ? '¿Ya tienes cuenta? ' : '¿No tienes cuenta? '}
                 <Link 
-                    component="button" 
-                    type="button"
-                    variant="body2" 
-                    fontWeight="bold"
-                    onClick={() => { 
-                        setEsRegistro(!esRegistro); 
-                        setError(''); 
-                    }}
+                    component="button" type="button" variant="body2" fontWeight="bold"
+                    onClick={() => { setEsRegistro(!esRegistro); setError(''); }}
                 >
                     {esRegistro ? 'Inicia sesión aquí' : 'Regístrate aquí'}
                 </Link>
@@ -164,7 +124,6 @@ function AuthForm() {
 
             <Divider sx={{ my: 1 }} />
 
-            {/* DATOS DE PRUEBA (BORRAR EN EL FUTURO) */}
             <Box sx={{ backgroundColor: 'grey.100', p: 1.5, borderRadius: 2, textAlign: 'center' }}>
                 <Typography variant="caption" fontWeight="bold" color="text.secondary" display="block" gutterBottom>
                     Usuarios de Prueba:

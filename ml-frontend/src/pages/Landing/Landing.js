@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from 'context';
 
-// 1. IMPORTAMOS LOS COMPONENTES DE MATERIAL-UI
 import { 
     Button, 
     Typography, 
@@ -16,7 +15,6 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 
-// Importamos tus componentes internos
 import { 
     AuthForm, 
     AdminPanel, 
@@ -27,12 +25,23 @@ import {
 } from 'components'; 
 
 export default function Landing() {
-    const [mostrarLogin, setMostrarLogin] = useState(false);
+    // NUEVO ESTADO: Maneja la visibilidad y el modo del modal
+    const [modalAuth, setModalAuth] = useState({ open: false, esRegistro: false });
+    
     const { usuario } = useAuth();
     const [empresaSeleccionada, setEmpresaSeleccionada] = useState({ id: null, nombre: '' });
 
     const manejarSeleccionEmpresa = (id, nombre) => {
         setEmpresaSeleccionada({ id, nombre });
+    };
+
+    // Funciones para abrir y cerrar el modal dinámicamente
+    const abrirModalAuth = (modoRegistro) => {
+        setModalAuth({ open: true, esRegistro: modoRegistro });
+    };
+
+    const cerrarModalAuth = () => {
+        setModalAuth((prev) => ({ ...prev, open: false }));
     };
 
     if (usuario) {
@@ -42,29 +51,38 @@ export default function Landing() {
     return (
         <Box sx={{ minHeight: '100vh', height: '100vh', overflowY: 'auto', backgroundColor: 'background.default', display: 'flex', flexDirection: 'column' }}>
             
-            {/* NUEVA BARRA DE NAVEGACIÓN CON MUI */}
             <AppBar position="static" color="inherit" elevation={1} sx={{ px: '5%' }}>
                 <Toolbar disableGutters sx={{ justifyContent: 'space-between' }}>
                     <Typography variant="h5" component="div" sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', color: 'text.primary' }}>
                         TesisML
                     </Typography>
                     
-                    <Button 
-                        variant="outlined" 
-                        color="primary" 
-                        size="large"
-                        onClick={() => setMostrarLogin(true)}
-                        sx={{ fontWeight: 'bold', borderRadius: 2 }}
-                    >
-                        Iniciar Sesión
-                    </Button>
+                    {/* BOTONES DE LA BARRA SUPERIOR */}
+                    <Box sx={{ display: 'flex', gap: 2 }}>
+                        <Button 
+                            variant="outlined" 
+                            color="primary" 
+                            size="large"
+                            onClick={() => abrirModalAuth(false)} // Se abre en modo Login
+                            sx={{ fontWeight: 'bold', borderRadius: 2 }}
+                        >
+                            Iniciar Sesión
+                        </Button>
+                        <Button 
+                            variant="contained" 
+                            color="primary" 
+                            size="large"
+                            onClick={() => abrirModalAuth(true)} // Se abre en modo Registro
+                            sx={{ fontWeight: 'bold', borderRadius: 2, display: { xs: 'none', sm: 'flex' } }} // Se oculta en móviles muy pequeños para no amontonar
+                        >
+                            Registrarse
+                        </Button>
+                    </Box>
                 </Toolbar>
             </AppBar>
 
-            {/* CONTENIDO PRINCIPAL */}
             <Box component="main" sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', p: { xs: 2, md: 4 }, gap: 4 }}>
                 
-                {/* HERO SECTION CON MUI */}
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', width: '100%', flexWrap: 'wrap', gap: 4, mb: 4, mt: 4 }}>
                     <Box sx={{ maxWidth: '500px' }}>
                         <Typography variant="h3" component="h1" sx={{ fontWeight: '900', color: 'text.primary', mb: 2, lineHeight: 1.2 }}>
@@ -79,7 +97,7 @@ export default function Landing() {
                             variant="contained" 
                             color="primary" 
                             size="large"
-                            onClick={() => setMostrarLogin(true)}
+                            onClick={() => abrirModalAuth(true)} // Ahora envía directo al modo Registro
                             sx={{ py: 1.5, px: 4, fontSize: '1.1rem', fontWeight: 'bold', borderRadius: 2, boxShadow: 3 }}
                         >
                             Comenzar ahora
@@ -91,7 +109,6 @@ export default function Landing() {
                     </Box>
                 </Box>
 
-                {/* RESTO DE LOS COMPONENTES (Aún con los estilos antiguos temporales) */}
                 <div style={estilos.contenedorSeccion}>
                     <h3 style={estilos.subtitulo}>Gestión de Datos</h3>
                     <AdminPanel /> 
@@ -126,24 +143,23 @@ export default function Landing() {
 
             </Box>
 
-            {/* NUEVO MODAL FLOTANTE CON MUI (Dialog) */}
             <Dialog 
-                open={mostrarLogin} 
-                onClose={() => setMostrarLogin(false)}
+                open={modalAuth.open} 
+                onClose={cerrarModalAuth}
                 maxWidth="xs"
                 fullWidth
                 PaperProps={{ sx: { borderRadius: 4, p: 1 } }}
             >
                 <DialogContent sx={{ position: 'relative' }}>
-                    {/* Botón de cerrar (X) en la esquina superior derecha */}
                     <IconButton 
-                        onClick={() => setMostrarLogin(false)}
+                        onClick={cerrarModalAuth}
                         sx={{ position: 'absolute', right: 8, top: 8, color: 'text.secondary' }}
                     >
                         <CloseIcon />
                     </IconButton>
                     
-                    <AuthForm />
+                    {/* Le pasamos el modo actual al formulario */}
+                    <AuthForm modoInicialRegistro={modalAuth.esRegistro} />
                 </DialogContent>
             </Dialog>
 
@@ -151,7 +167,6 @@ export default function Landing() {
     );
 }
 
-// Estilos temporales para los componentes que aún no migramos
 const estilos = {
     contenedorSeccion: { backgroundColor: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', width: '100%', maxWidth: '1200px' },
     subtitulo: { fontSize: '1.5rem', color: '#1e293b', marginBottom: '1rem', borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem' },

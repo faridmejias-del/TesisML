@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { empresaService } from 'services'; 
 
-function EmpresaTable({ onSelect, esAdmin = false, onEdit, onDelete }) {
+function EmpresaTable({ onSelect = () => {}, esAdmin = false, onEdit, onDelete }) {
     const [empresas, setEmpresas] = useState([]);
     const [sectores, setSectores] = useState([]);
     const [sectorSeleccionado, setSectorSeleccionado] = useState('todos'); 

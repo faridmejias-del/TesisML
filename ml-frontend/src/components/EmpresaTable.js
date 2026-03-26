@@ -1,5 +1,10 @@
 // src/components/EmpresaTable.js
 import React, { useState, useEffect, useRef } from 'react';
+import { 
+    Box, Paper, Typography, CircularProgress, Chip, IconButton, Tooltip,
+    Table, TableBody, TableCell, TableContainer, TableHead, TableRow 
+} from '@mui/material';
+import { ChevronLeft, ChevronRight, Edit, Delete } from '@mui/icons-material';
 import { empresaService } from 'services'; 
 
 function EmpresaTable({ onSelect = () => {}, esAdmin = false, onEdit, onDelete }) {
@@ -8,7 +13,7 @@ function EmpresaTable({ onSelect = () => {}, esAdmin = false, onEdit, onDelete }
     const [sectorSeleccionado, setSectorSeleccionado] = useState('todos'); 
     const [cargando, setCargando] = useState(true);
 
-    // 1. NUEVO: Referencia para controlar el scroll de la barra de sectores
+    // Referencia para controlar el scroll de la barra de sectores
     const scrollRef = useRef(null);
 
     useEffect(() => {
@@ -30,162 +35,186 @@ function EmpresaTable({ onSelect = () => {}, esAdmin = false, onEdit, onDelete }
         ? empresas
         : empresas.filter((emp) => emp.IdSector === sectorSeleccionado);
 
-    // 2. NUEVO: Función para desplazar la barra lateralmente
+    // Función para desplazar la barra lateralmente
     const desplazar = (direccion) => {
         if (scrollRef.current) {
-            // Se mueve 250 pixeles hacia la izq o der
             const cantidad = direccion === 'izq' ? -250 : 250;
             scrollRef.current.scrollBy({ left: cantidad, behavior: 'smooth' });
         }
     };
 
-    if (cargando) return <p style={{padding: '2rem', textAlign: 'center'}}>Cargando listado del mercado...</p>;
+    if (cargando) {
+        return (
+            <Box display="flex" justifyContent="center" alignItems="center" p={4} gap={2}>
+                <CircularProgress size={24} />
+                <Typography color="text.secondary">Cargando listado del mercado...</Typography>
+            </Box>
+        );
+    }
 
     return (
-        <div style={estilos.contenedor}>
-            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '1rem', flexWrap: 'wrap'}}>
-                <div>
-                    <h3 style={{margin: '0 0 5px 0', color: '#1f2937'}}>Listado de Empresas Activas</h3>
-                    <p style={{margin: 0, fontSize: '0.85rem', color: '#6b7280'}}>
+        <Paper 
+            elevation={0} 
+            sx={{ 
+                p: 3, 
+                borderRadius: '12px', 
+                boxShadow: '0 4px 6px rgba(0,0,0,0.05)', 
+                width: '100%', 
+                bgcolor: 'background.paper' 
+            }}
+        >
+            {/* Cabecera */}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', mb: 2, flexWrap: 'wrap' }}>
+                <Box>
+                    <Typography variant="h6" fontWeight="bold" color="#1f2937" gutterBottom>
+                        Listado de Empresas Activas
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
                         {esAdmin ? "* Gestión administrativa de activos." : "* Haz clic en una fila para ver su análisis gráfico."}
-                    </p>
-                </div>
-            </div>
+                    </Typography>
+                </Box>
+            </Box>
 
-            {/* 3. NUEVO: Contenedor del Carrusel con Flechas */}
-            <div style={estilos.carruselContenedor}>
-                
+            {/* Contenedor del Carrusel con Flechas */}
+            <Box 
+                sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: 1.5, 
+                    mb: 2, 
+                    pb: 1.5, 
+                    borderBottom: '1px solid #e2e8f0' 
+                }}
+            >
                 {/* Botón Izquierda */}
-                <button 
+                <IconButton 
                     onClick={() => desplazar('izq')} 
-                    style={estilos.botonScroll}
+                    size="small" 
+                    sx={{ border: '1px solid #cbd5e1', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', bgcolor: '#fff' }}
                     title="Desplazar a la izquierda"
                 >
-                    &#10094;
-                </button>
+                    <ChevronLeft fontSize="small" />
+                </IconButton>
 
-                {/* BARRA DE FILTROS POR SECTOR (Ahora controlada por scrollRef) */}
-                <div ref={scrollRef} style={estilos.barraSectores}>
-                    <button
+                {/* BARRA DE FILTROS POR SECTOR */}
+                <Box 
+                    ref={scrollRef} 
+                    sx={{ 
+                        display: 'flex', 
+                        gap: 1, 
+                        overflowX: 'auto', 
+                        flexGrow: 1,
+                        scrollbarWidth: 'none', // Oculta scrollbar en Firefox
+                        '&::-webkit-scrollbar': { display: 'none' } // Oculta scrollbar en Chrome/Safari
+                    }}
+                >
+                    <Chip
+                        label="Todos los sectores"
                         onClick={() => setSectorSeleccionado('todos')}
-                        style={{
-                            ...estilos.botonSector,
-                            backgroundColor: sectorSeleccionado === 'todos' ? '#4f46e5' : '#f8fafc',
+                        sx={{
+                            fontWeight: '600',
+                            bgcolor: sectorSeleccionado === 'todos' ? '#4f46e5' : '#f8fafc',
                             color: sectorSeleccionado === 'todos' ? 'white' : '#475569',
-                            borderColor: sectorSeleccionado === 'todos' ? '#4338ca' : '#e2e8f0',
+                            border: `1px solid ${sectorSeleccionado === 'todos' ? '#4338ca' : '#e2e8f0'}`,
+                            '&:hover': { bgcolor: sectorSeleccionado === 'todos' ? '#4338ca' : '#f1f5f9' }
                         }}
-                    >
-                        Todos los sectores
-                    </button>
+                    />
 
                     {sectores.map((sector) => (
-                        <button
+                        <Chip
                             key={sector.IdSector}
+                            label={sector.NombreSector}
                             onClick={() => setSectorSeleccionado(sector.IdSector)}
-                            style={{
-                                ...estilos.botonSector,
-                                backgroundColor: sectorSeleccionado === sector.IdSector ? '#4f46e5' : '#f8fafc',
+                            sx={{
+                                fontWeight: '600',
+                                bgcolor: sectorSeleccionado === sector.IdSector ? '#4f46e5' : '#f8fafc',
                                 color: sectorSeleccionado === sector.IdSector ? 'white' : '#475569',
-                                borderColor: sectorSeleccionado === sector.IdSector ? '#4338ca' : '#e2e8f0',
+                                border: `1px solid ${sectorSeleccionado === sector.IdSector ? '#4338ca' : '#e2e8f0'}`,
+                                '&:hover': { bgcolor: sectorSeleccionado === sector.IdSector ? '#4338ca' : '#f1f5f9' }
                             }}
-                        >
-                            {sector.NombreSector}
-                        </button>
+                        />
                     ))}
-                </div>
+                </Box>
 
                 {/* Botón Derecha */}
-                <button 
+                <IconButton 
                     onClick={() => desplazar('der')} 
-                    style={estilos.botonScroll}
+                    size="small" 
+                    sx={{ border: '1px solid #cbd5e1', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', bgcolor: '#fff' }}
                     title="Desplazar a la derecha"
                 >
-                    &#10095;
-                </button>
-
-            </div>
+                    <ChevronRight fontSize="small" />
+                </IconButton>
+            </Box>
 
             {/* TABLA DE RESULTADOS */}
-            <div style={{overflowX: 'auto'}}>
-                <table style={estilos.tabla}>
-                    <thead>
-                        <tr style={estilos.header}>
-                            {/* Ajustamos los porcentajes dinámicamente para que siempre sumen 100% */}
-                            <th style={{ ...estilos.th, width: esAdmin ? '20%' : '30%' }}>Ticker</th>
-                            <th style={{ ...estilos.th, width: esAdmin ? '35%' : '40%' }}>Nombre de Empresa</th>
-                            <th style={{ ...estilos.th, width: esAdmin ? '25%' : '30%' }}>Sector</th>
-                            
-                            {/* La columna de acciones ocupa el 20% restante */}
-                            {esAdmin && <th style={{ ...estilos.th, width: '20%', textAlign: 'center' }}>Acciones</th>}
-                        </tr>
-                    </thead>
-                    <tbody>
+            <TableContainer>
+                <Table size="medium">
+                    <TableHead sx={{ bgcolor: '#f8fafc' }}>
+                        <TableRow>
+                            <TableCell sx={{ fontWeight: '600', color: '#64748b', width: esAdmin ? '20%' : '30%' }}>TICKER</TableCell>
+                            <TableCell sx={{ fontWeight: '600', color: '#64748b', width: esAdmin ? '35%' : '40%' }}>NOMBRE DE EMPRESA</TableCell>
+                            <TableCell sx={{ fontWeight: '600', color: '#64748b', width: esAdmin ? '25%' : '30%' }}>SECTOR</TableCell>
+                            {esAdmin && <TableCell align="center" sx={{ fontWeight: '600', color: '#64748b', width: '20%' }}>ACCIONES</TableCell>}
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
                         {empresasAMostrar.length > 0 ? (
                             empresasAMostrar.map((emp) => (
-                                <tr 
+                                <TableRow 
                                     key={emp.IdEmpresa} 
-                                    style={estilos.fila}
+                                    hover
                                     onClick={() => onSelect(emp.IdEmpresa, emp.NombreEmpresa)}
-                                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f0fdf4'}
-                                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                    sx={{ 
+                                        cursor: 'pointer',
+                                        '&:hover': { bgcolor: '#f0fdf4 !important' } 
+                                    }}
                                 >
-                                    <td style={{...estilos.td, ...estilos.ticker}}>{emp.Ticket}</td>
-                                    <td style={estilos.td}>{emp.NombreEmpresa}</td>
-                                    <td style={estilos.td}>
-                                        <span style={estilos.sectorBadge}>{emp.NombreSector}</span>
-                                    </td>
-                                    {/* 3. Celdas condicionales para Admin */}
+                                    <TableCell sx={{ fontWeight: '800', color: '#0f172a' }}>{emp.Ticket}</TableCell>
+                                    <TableCell sx={{ color: '#334155' }}>{emp.NombreEmpresa}</TableCell>
+                                    <TableCell>
+                                        <Chip 
+                                            label={emp.NombreSector} 
+                                            size="small" 
+                                            sx={{ bgcolor: '#e0e7ff', color: '#4338ca', fontWeight: 'bold', fontSize: '0.75rem' }} 
+                                        />
+                                    </TableCell>
                                     {esAdmin && (
-                                        <td style={{...estilos.td, textAlign: 'center'}}>
-                                            <button 
-                                                onClick={(e) => { e.stopPropagation(); onEdit(emp); }} 
-                                                style={estilos.btnAccionEdit}
-                                            >
-                                                ✏️
-                                            </button>
-                                            <button 
-                                                onClick={(e) => { e.stopPropagation(); onDelete(emp.IdEmpresa); }} 
-                                                style={estilos.btnAccionDelete}
-                                            >
-                                                🗑️
-                                            </button>
-                                        </td>
+                                        <TableCell align="center">
+                                            <Tooltip title="Editar">
+                                                <IconButton 
+                                                    onClick={(e) => { e.stopPropagation(); onEdit(emp); }} 
+                                                    size="small"
+                                                    sx={{ color: '#64748b', '&:hover': { color: '#1976d2' } }}
+                                                >
+                                                    <Edit fontSize="small" />
+                                                </IconButton>
+                                            </Tooltip>
+                                            <Tooltip title="Eliminar">
+                                                <IconButton 
+                                                    onClick={(e) => { e.stopPropagation(); onDelete(emp.IdEmpresa); }} 
+                                                    size="small"
+                                                    sx={{ color: '#64748b', '&:hover': { color: '#d32f2f' } }}
+                                                >
+                                                    <Delete fontSize="small" />
+                                                </IconButton>
+                                            </Tooltip>
+                                        </TableCell>
                                     )}
-                                </tr>
+                                </TableRow>
                             ))
                         ) : (
-                            <tr>
-                                <td colSpan="3" style={{textAlign: 'center', padding: '2rem', color: '#94a3b8'}}>
+                            <TableRow>
+                                <TableCell colSpan={esAdmin ? 4 : 3} align="center" sx={{ py: 4, color: '#94a3b8' }}>
                                     No hay empresas en la categoría seleccionada.
-                                </td>
-                            </tr>
+                                </TableCell>
+                            </TableRow>
                         )}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+                    </TableBody>
+                </Table>
+            </TableContainer>
+        </Paper>
     );
 }
-
-const estilos = {
-    contenedor: { backgroundColor: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', width: '100%', boxSizing: 'border-box' },
-    
-    // NUEVOS ESTILOS PARA EL CARRUSEL
-    carruselContenedor: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' },
-    barraSectores: { display: 'flex', gap: '10px', overflowX: 'auto', scrollbarWidth: 'none', flexGrow: 1 },
-    botonScroll: { background: '#fff', border: '1px solid #cbd5e1', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', color: '#475569', flexShrink: 0, transition: '0.2s', padding: 0 },
-    
-    botonSector: { padding: '8px 16px', borderRadius: '20px', cursor: 'pointer', fontWeight: '600', whiteSpace: 'nowrap', transition: '0.2s', fontSize: '0.85rem', border: '1px solid transparent' },
-    tabla: { width: '100%', borderCollapse: 'collapse' },
-    header: { textAlign: 'left', borderBottom: '2px solid #e2e8f0', backgroundColor: '#f8fafc' },
-    th: { padding: '12px 15px', color: '#64748b', fontSize: '0.85rem', fontWeight: '600', textTransform: 'uppercase' },
-    td: { padding: '12px 15px', fontSize: '0.95rem', color: '#334155' },
-    fila: { borderBottom: '1px solid #f1f5f9', cursor: 'pointer', transition: 'background-color 0.2s ease' }, 
-    ticker: { fontWeight: '800', color: '#0f172a' },
-    sectorBadge: { backgroundColor: '#e0e7ff', color: '#4338ca', padding: '4px 10px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 'bold' },
-
-    btnAccionEdit: { background: 'none', border: 'none', cursor: 'pointer', marginRight: '10px', fontSize: '1.1rem' },
-    btnAccionDelete: { background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.1rem' }
-};
 
 export default EmpresaTable;

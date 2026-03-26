@@ -1,6 +1,7 @@
 // src/components/PrecioChart.js
 import React, { useState, useEffect, useMemo } from 'react';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
+import { Box, Paper, Typography, ToggleButton, ToggleButtonGroup, CircularProgress } from '@mui/material';
 import { precioService } from 'services';
 
 function PrecioChart({ empresaId, nombreEmpresa }) {
@@ -14,7 +15,6 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
                 setCargando(true);
                 try {
                     const data = await precioService.getByEmpresa(empresaId); 
-                    
                     setDatosOriginales(data);
                 } catch (error) {
                     console.error("Error al cargar gráfica", error);
@@ -26,88 +26,92 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
         }
     }, [empresaId]);
 
-    // LÓGICA DE FILTRADO RESPONSIVA
+    // LÓGICA DE FILTRADO RESPONSIVA (Intacta)
     const datosFiltrados = useMemo(() => {
-    if (!datosOriginales || !datosOriginales.length) return [];
+        if (!datosOriginales || !datosOriginales.length) return [];
 
-    // Función definitiva para detectar y formatear la fecha
-    const formatearParaGrafica = (item, tipoCorta = true) => {
-        let fechaObj;
+        const formatearParaGrafica = (item, tipoCorta = true) => {
+            let fechaObj;
+            
+            try {
+                if (item.Fecha instanceof Date) {
+                    fechaObj = item.Fecha;
+                } else if (typeof item.Fecha === 'string') {
+                    const isoStr = item.Fecha.replace(' ', 'T').split('.')[0];
+                    fechaObj = new Date(isoStr);
+                } else if (typeof item.Fecha === 'number') {
+                    fechaObj = new Date(item.Fecha);
+                }
+
+                if (!fechaObj || isNaN(fechaObj.getTime())) {
+                    fechaObj = new Date(item.Fecha);
+                }
+
+                if (isNaN(fechaObj.getTime())) return { ...item, fechaValida: null, FechaCorta: 'Err' };
+
+                return {
+                    ...item,
+                    fechaValida: fechaObj,
+                    FechaCorta: tipoCorta 
+                        ? fechaObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
+                        : fechaObj.toLocaleDateString('es-ES')
+                };
+            } catch (e) {
+                return { ...item, fechaValida: null, FechaCorta: 'Err' };
+            }
+        };
+
+        const datosProcesados = datosOriginales.map(d => formatearParaGrafica(d, rango !== 'TODO'));
+
+        datosProcesados.sort((a, b) => {
+            if (!a.fechaValida || !b.fechaValida) return 0;
+            return a.fechaValida.getTime() - b.fechaValida.getTime();
+        });
         
-        try {
-            // Caso 1: Ya es un objeto Date
-            if (item.Fecha instanceof Date) {
-                fechaObj = item.Fecha;
-            } 
-            // Caso 2: Es un string (Timestamp de SQL)
-            else if (typeof item.Fecha === 'string') {
-                // Reemplazamos espacio por T para formato ISO y quitamos microsegundos
-                const isoStr = item.Fecha.replace(' ', 'T').split('.')[0];
-                fechaObj = new Date(isoStr);
-            } 
-            // Caso 3: Es un número (Timestamp Unix)
-            else if (typeof item.Fecha === 'number') {
-                fechaObj = new Date(item.Fecha);
-            }
+        if (rango === 'TODO') return datosProcesados;
 
-            // Si después de todo no es válida, intentamos el constructor directo
-            if (!fechaObj || isNaN(fechaObj.getTime())) {
-                fechaObj = new Date(item.Fecha);
-            }
+        const datosConFecha = datosProcesados.filter(d => d.fechaValida);
+        if (!datosConFecha.length) return [];
 
-            if (isNaN(fechaObj.getTime())) return { ...item, fechaValida: null, FechaCorta: 'Err' };
+        const ultimaFecha = datosConFecha[datosConFecha.length - 1].fechaValida;
+        const fechaLimite = new Date(ultimaFecha.getTime());
 
-            return {
-                ...item,
-                fechaValida: fechaObj,
-                FechaCorta: tipoCorta 
-                    ? fechaObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
-                    : fechaObj.toLocaleDateString('es-ES')
-            };
-        } catch (e) {
-            return { ...item, fechaValida: null, FechaCorta: 'Err' };
+        if (rango === '1D') fechaLimite.setDate(fechaLimite.getDate() - 1);
+        else if (rango === '5D') fechaLimite.setDate(fechaLimite.getDate() - 5);
+        else if (rango === '1M') fechaLimite.setMonth(fechaLimite.getMonth() - 1);
+        else if (rango === '6M') fechaLimite.setMonth(fechaLimite.getMonth() - 6);
+        else if (rango === '1Y') fechaLimite.setFullYear(fechaLimite.getFullYear() - 1);
+        else if (rango === '5Y') fechaLimite.setFullYear(fechaLimite.getFullYear() - 5);
+
+        return datosProcesados.filter(d => d.fechaValida && d.fechaValida >= fechaLimite);
+    }, [datosOriginales, rango]);
+
+    // Manejador para el ToggleButtonGroup de MUI
+    const handleCambioRango = (event, nuevoRango) => {
+        // Evita que el usuario deseleccione la opción actual dejando el valor en null
+        if (nuevoRango !== null) {
+            setRango(nuevoRango);
         }
     };
 
-    // 1. Procesamos todos los datos primero para tener fechas reales sobre las que filtrar
-    const datosProcesados = datosOriginales.map(d => formatearParaGrafica(d, rango !== 'TODO'));
-
-    datosProcesados.sort((a, b) => {
-        if (!a.fechaValida || !b.fechaValida) return 0;
-        return a.fechaValida.getTime() - b.fechaValida.getTime();
-    });
-    
-    // 2. Si el rango es TODO, devolvemos todo lo procesado
-    if (rango === 'TODO') return datosProcesados;
-
-    // 3. Calculamos el límite basándonos en el ÚLTIMO dato que tenemos (el más reciente)
-    // Buscamos el último dato que tenga una fecha válida
-    const datosConFecha = datosProcesados.filter(d => d.fechaValida);
-    if (!datosConFecha.length) return [];
-
-    const ultimaFecha = datosConFecha[datosConFecha.length - 1].fechaValida;
-    const fechaLimite = new Date(ultimaFecha.getTime());
-
-    if (rango === '1D') fechaLimite.setDate(fechaLimite.getDate() - 1);
-    else if (rango === '5D') fechaLimite.setDate(fechaLimite.getDate() - 5);
-    else if (rango === '1M') fechaLimite.setMonth(fechaLimite.getMonth() - 1);
-    else if (rango === '6M') fechaLimite.setMonth(fechaLimite.getMonth() - 6);
-    else if (rango === '1Y') fechaLimite.setFullYear(fechaLimite.getFullYear() - 1);
-    else if (rango === '5Y') fechaLimite.setFullYear(fechaLimite.getFullYear() - 5);
-
-    // 4. Filtramos
-    return datosProcesados.filter(d => d.fechaValida && d.fechaValida >= fechaLimite);
-
-}, [datosOriginales, rango]);
-
     if (!empresaId) {
         return (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', minHeight: '80px', color: '#64748b' }}>
-                <p style={{ margin: 0, fontWeight: '500' }}>Esperando selección de empresa...</p>
-            </div>
+            <Box display="flex" justifyContent="center" alignItems="center" height="100%" minHeight="80px" color="text.secondary">
+                <Typography variant="body1" fontWeight="500">
+                    Esperando selección de empresa...
+                </Typography>
+            </Box>
         );
     }
-    if (cargando) return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', minHeight: '80px' }}><p>Dibujando gráfica...</p></div>;
+
+    if (cargando) {
+        return (
+            <Box display="flex" justifyContent="center" alignItems="center" height="100%" minHeight="80px" gap={2} color="text.secondary">
+                <CircularProgress size={24} />
+                <Typography>Dibujando gráfica...</Typography>
+            </Box>
+        );
+    }
 
     const botonesRango = [
         { label: '1 día', v: '1D' }, { label: '5 días', v: '5D' },
@@ -117,28 +121,56 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
     ];
 
     return (
-        <div style={estilos.contenedor}>
-            <div style={estilos.headerGrafica}>
-                <h4>Historial de Precios: {nombreEmpresa}</h4>
-                <div style={estilos.toolbar}>
+        <Paper 
+            elevation={0} 
+            sx={{ 
+                p: 3, 
+                borderRadius: '12px', 
+                boxShadow: '0 4px 20px rgba(0,0,0,0.08)', 
+                mt: 2,
+                bgcolor: 'background.paper' 
+            }}
+        >
+            <Box 
+                sx={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center', 
+                    flexWrap: 'wrap', 
+                    gap: 2, 
+                    mb: 3 
+                }}
+            >
+                <Typography variant="h6" component="h4" fontWeight="bold">
+                    Historial de Precios: {nombreEmpresa}
+                </Typography>
+                
+                <ToggleButtonGroup
+                    value={rango}
+                    exclusive
+                    onChange={handleCambioRango}
+                    aria-label="Rango de tiempo"
+                    size="small"
+                    color="primary"
+                >
                     {botonesRango.map(btn => (
-                        <button 
+                        <ToggleButton 
                             key={btn.v} 
-                            onClick={() => setRango(btn.v)}
-                            style={{
-                                ...estilos.btnRango,
-                                backgroundColor: rango === btn.v ? '#e8f0fe' : 'transparent',
-                                color: rango === btn.v ? '#1a73e8' : '#5f6368',
-                                fontWeight: rango === btn.v ? 'bold' : 'normal'
+                            value={btn.v}
+                            sx={{
+                                textTransform: 'none',
+                                fontSize: '0.75rem',
+                                fontWeight: rango === btn.v ? 'bold' : 'normal',
+                                px: 2
                             }}
                         >
                             {btn.label}
-                        </button>
+                        </ToggleButton>
                     ))}
-                </div>
-            </div>
+                </ToggleButtonGroup>
+            </Box>
 
-            <div style={{ width: '100%', height: 350 }}>
+            <Box sx={{ width: '100%', height: 350 }}>
                 <ResponsiveContainer>
                     <AreaChart data={datosFiltrados}>
                         <defs>
@@ -161,16 +193,9 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
                         />
                     </AreaChart>
                 </ResponsiveContainer>
-            </div>
-        </div>
+            </Box>
+        </Paper>
     );
 }
-
-const estilos = {
-    contenedor: { backgroundColor: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', marginTop: '1rem' },
-    headerGrafica: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '1rem' },
-    toolbar: { display: 'flex', gap: '5px', flexWrap: 'wrap' },
-    btnRango: { border: 'none', padding: '6px 10px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.75rem', transition: '0.2s' }
-};
 
 export default PrecioChart;

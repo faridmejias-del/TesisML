@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { Box, Paper, Typography, CircularProgress, Chip } from '@mui/material';
 import { resultadoService } from 'services';
 
 function ResultadoPanel({ empresaId }) {
     const [resultado, setResultado] = useState(null);
     const [cargando, setCargando] = useState(false);
 
-
     // Recargar cada vez que cambie la empresa seleccionada
     useEffect(() => {
-        // Función para cargar los datos desde la BD (Movida aquí adentro)
         const cargarResultado = async () => {
             if (!empresaId) return;
             setCargando(true);
@@ -28,121 +27,151 @@ function ResultadoPanel({ empresaId }) {
         };
 
         cargarResultado();
-    }, [empresaId]); // Ahora empresaId es la única dependencia real
+    }, [empresaId]);
 
     if (!empresaId) {
         return (
-            <div style={estilos.panelVacio}>
-                <p style={{ margin: 0, fontWeight: '500' }}>Esperando análisis de IA...</p>
-            </div>
+            <Box 
+                sx={{
+                    bgcolor: '#f8fafc',
+                    p: 2,
+                    borderRadius: '12px',
+                    border: '2px dashed #e2e8f0',
+                    textAlign: 'center',
+                    color: 'text.secondary',
+                    height: '100%',
+                    minHeight: '60px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                }}
+            >
+                <Typography fontWeight="500">Esperando análisis de IA...</Typography>
+            </Box>
         );
     }
 
     // Lógica visual para la recomendación
     const recomendacionTexto = resultado?.Recomendacion || "Sin datos";
     const esCompra = recomendacionTexto.toLowerCase().includes('alcista') || 
-                    recomendacionTexto.toLowerCase().includes('compra');
+                     recomendacionTexto.toLowerCase().includes('compra');
 
     return (
-        <div style={estilos.panel}>
-            <header style={estilos.header}>
-                <h4 style={estilos.titulo}>Último Análisis de IA</h4>
-                {resultado && <span style={estilos.badgeLive}>Live</span>}
-            </header>
+        <Paper 
+            elevation={0}
+            sx={{
+                bgcolor: 'background.paper',
+                p: 3,
+                borderRadius: '16px',
+                border: '1px solid #f0f0f0',
+                boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 1.5,
+                minHeight: '320px'
+            }}
+        >
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="h6" component="h4" fontWeight="700" color="#1e293b">
+                    Último Análisis de IA
+                </Typography>
+                {resultado && (
+                    <Chip 
+                        label="Live" 
+                        size="small"
+                        sx={{ 
+                            bgcolor: '#fee2e2', 
+                            color: '#ef4444', 
+                            fontWeight: 'bold', 
+                            borderRadius: '4px',
+                            textTransform: 'uppercase',
+                            height: '20px',
+                            fontSize: '0.7rem'
+                        }} 
+                    />
+                )}
+            </Box>
             
             {cargando ? (
-                <div style={estilos.centro}>
-                    <p style={estilos.loading}>Consultando base de datos...</p>
-                </div>
+                <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+                    <CircularProgress size={24} sx={{ color: '#6366f1' }} />
+                    <Typography sx={{ color: '#6366f1', fontWeight: '500' }}>
+                        Consultando base de datos...
+                    </Typography>
+                </Box>
             ) : resultado ? (
                 <>
-                    <div style={estilos.metrica}>
-                        <span>Predicción de Cierre:</span>
-                        <strong style={estilos.valorPrincipal}>
-                            ${Number(resultado.PrediccionIA || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}
-                        </strong>
-                    </div>
+                    {/* Predicción */}
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1, borderBottom: '1px solid #f8fafc' }}>
+                        <Typography component="span" color="text.secondary">Predicción de Cierre:</Typography>
+                        <Typography component="strong" sx={{ fontSize: '1.2rem', color: '#0f172a', fontWeight: 'bold' }}>
+                            ${Number(resultado.PrediccionIA || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        </Typography>
+                    </Box>
 
-                    <div style={estilos.metrica}>
-                        <span>Índice RSI:</span>
-                        <span style={{ 
-                            color: resultado.RSI > 70 ? '#d9534f' : resultado.RSI < 30 ? '#5cb85c' : '#f0ad4e',
-                            fontWeight: 'bold' 
-                        }}>
+                    {/* RSI */}
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1, borderBottom: '1px solid #f8fafc' }}>
+                        <Typography component="span" color="text.secondary">Índice RSI:</Typography>
+                        <Typography 
+                            component="span" 
+                            sx={{ 
+                                color: resultado.RSI > 70 ? '#d9534f' : resultado.RSI < 30 ? '#5cb85c' : '#f0ad4e',
+                                fontWeight: 'bold' 
+                            }}
+                        >
                             {Number(resultado.RSI || 0).toFixed(2)}
-                        </span>
-                    </div>
+                        </Typography>
+                    </Box>
 
-                    <div style={estilos.metrica}>
-                        <span>Confianza (Score):</span>
-                        <div style={estilos.barraFondo}>
-                            <div style={{ 
-                                ...estilos.barraProgreso, 
-                                width: `${Math.min(Math.max((resultado.Score + 5) * 10, 0), 100)}%`,
-                                backgroundColor: resultado.Score > 0 ? '#4f46e5' : '#d9534f'
-                            }}></div>
-                        </div>
-                    </div>
+                    {/* Confianza / Score */}
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1, borderBottom: '1px solid #f8fafc' }}>
+                        <Typography component="span" color="text.secondary">Confianza (Score):</Typography>
+                        <Box sx={{ width: '80px', height: '6px', bgcolor: '#f1f5f9', borderRadius: '10px', overflow: 'hidden' }}>
+                            <Box 
+                                sx={{ 
+                                    height: '100%', 
+                                    transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)', 
+                                    width: `${Math.min(Math.max((resultado.Score + 5) * 10, 0), 100)}%`,
+                                    bgcolor: resultado.Score > 0 ? '#4f46e5' : '#d9534f'
+                                }} 
+                            />
+                        </Box>
+                    </Box>
 
-                    <div style={{
-                        ...estilos.badgeRecomendacion, 
-                        backgroundColor: esCompra ? '#dcfce7' : '#fee2e2', 
-                        color: esCompra ? '#166534' : '#991b1b',
-                        border: `1px solid ${esCompra ? '#bbf7d0' : '#fecaca'}`
-                    }}>
+                    {/* Badge Recomendación */}
+                    <Box 
+                        sx={{
+                            mt: 3, 
+                            p: 2, 
+                            borderRadius: '12px', 
+                            textAlign: 'center', 
+                            fontWeight: '800', 
+                            fontSize: '1.2rem', 
+                            letterSpacing: '1px',
+                            bgcolor: esCompra ? '#dcfce7' : '#fee2e2', 
+                            color: esCompra ? '#166534' : '#991b1b',
+                            border: `1px solid ${esCompra ? '#bbf7d0' : '#fecaca'}`
+                        }}
+                    >
                         {recomendacionTexto.toUpperCase()}
-                    </div>
+                    </Box>
                     
-                    <footer style={estilos.footer}>
-                        <small>Actualizado: {new Date(resultado.FechaAnalisis).toLocaleDateString()} a las {new Date(resultado.FechaAnalisis).toLocaleTimeString()}</small>
-                    </footer>
+                    {/* Footer */}
+                    <Box sx={{ mt: 'auto', pt: 2, textAlign: 'center' }}>
+                        <Typography variant="caption" sx={{ color: '#94a3b8' }}>
+                            Actualizado: {new Date(resultado.FechaAnalisis).toLocaleDateString()} a las {new Date(resultado.FechaAnalisis).toLocaleTimeString()}
+                        </Typography>
+                    </Box>
                 </>
             ) : (
-                <div style={estilos.centro}>
-                    <p style={estilos.noData}>No existen predicciones para esta empresa. Ejecuta el análisis masivo para generar datos.</p>
-                </div>
+                <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Typography sx={{ color: '#94a3b8', fontSize: '0.85rem', lineHeight: 1.4, textAlign: 'center' }}>
+                        No existen predicciones para esta empresa. Ejecuta el análisis masivo para generar datos.
+                    </Typography>
+                </Box>
             )}
-        </div>
+        </Paper>
     );
 }
-
-const estilos = {
-    panel: { 
-        backgroundColor: '#fff', 
-        padding: '1.5rem', 
-        borderRadius: '16px', 
-        border: '1px solid #f0f0f0', 
-        boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '0.75rem',
-        minHeight: '320px'
-    },
-    panelVacio: {
-        backgroundColor: '#f8fafc',
-        padding: '1rem',
-        borderRadius: '12px', // Borde más suave
-        border: '2px dashed #e2e8f0',
-        textAlign: 'center',
-        color: '#64748b',
-        height: '100%',
-        minHeight: '60px', // Evita que se estire sin necesidad
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center' // Centra horizontalmente
-    },
-    header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' },
-    titulo: { margin: 0, color: '#1e293b', fontSize: '1.1rem', fontWeight: '700' },
-    badgeLive: { backgroundColor: '#fee2e2', color: '#ef4444', padding: '2px 8px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 'bold', textTransform: 'uppercase' },
-    metrica: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #f8fafc' },
-    valorPrincipal: { fontSize: '1.2rem', color: '#0f172a' },
-    barraFondo: { width: '80px', height: '6px', backgroundColor: '#f1f5f9', borderRadius: '10px', overflow: 'hidden' },
-    barraProgreso: { height: '100%', transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)' },
-    badgeRecomendacion: { marginTop: '1.5rem', padding: '15px', borderRadius: '12px', textAlign: 'center', fontWeight: '800', fontSize: '1.2rem', letterSpacing: '1px' },
-    footer: { marginTop: 'auto', paddingTop: '1rem', textAlign: 'center', color: '#94a3b8', fontSize: '0.7rem' },
-    centro: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' },
-    loading: { color: '#6366f1', fontWeight: '500', animate: 'pulse' },
-    noData: { color: '#94a3b8', fontSize: '0.85rem', lineHeight: '1.4' }
-};
 
 export default ResultadoPanel;

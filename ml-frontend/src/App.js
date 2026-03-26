@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { Login, Home, Panel } from 'pages'; 
+import { Landing, Home, Panel } from 'pages'; 
 import { UserLayout, AdminLayout } from 'layouts'; 
 import { AuthProvider, useAuth } from 'context';
 
@@ -25,7 +25,8 @@ function AppRoutes() {
   return (
     <AuthProvider>
       <Routes>
-        <Route path="/login" element={<Login />} />
+        {/* NUEVA RUTA RAIZ */}
+        <Route path="/" element={<Landing />} />
         
         {/* Rutas exclusivas de USUARIO NORMAL */}
         <Route element={<RutaProtegida rolPermitido="usuario"><UserLayout /></RutaProtegida>}>
@@ -37,7 +38,8 @@ function AppRoutes() {
           <Route path="/panel" element={<Panel />} />
         </Route>
 
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        {/* CUALQUIER OTRA RUTA REDIRIGE AL INICIO */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AuthProvider>
   );

@@ -132,11 +132,14 @@ export default function Portafolio() {
       );
       
       toast.success(`${seleccionadas.length} empresas agregadas correctamente`, { id: promesaNotificacion });
-      cargarDatos();
+      cargarDatos(); // Esto ya se encarga de limpiar el array de "seleccionadas"
       setPaginaDisponibles(1); 
+      
+      setProcesandoMasivo(false); 
+      
     } catch (error) {
       toast.error("Hubo un error al agregar algunas empresas", { id: promesaNotificacion });
-      setProcesandoMasivo(false);
+      setProcesandoMasivo(false); // Aquí ya lo teníamos, pero faltaba en el éxito
     }
   };
 

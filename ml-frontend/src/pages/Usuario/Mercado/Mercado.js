@@ -42,7 +42,7 @@ export default function Mercado() {
         <Grid container spacing={3} alignItems="center"  justify="center">
             
             {/* Gráfico de Precios */}
-            <Grid item xs={12} lg={8} xl={9}>
+            <Grid size={{ xs: 12, lg: 8 }}>
                 <Paper elevation={2} sx={{ 
                     p: {xs: 1, md: 2}, 
                     borderRadius: 3, 

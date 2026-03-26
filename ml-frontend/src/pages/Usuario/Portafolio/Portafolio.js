@@ -117,7 +117,7 @@ export default function Portafolio() {
       <Grid container spacing={{ xs: 2, md: 3, lg: 4 }} alignItems="stretch">
         
         {/* PANEL: MIS EMPRESAS */}
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Paper elevation={2} sx={{ p: { xs: 1.5, sm: 2, md: 3 }, borderRadius: 3, height: '100%' }}>
             <ListaPortafolio 
               titulo="Empresas en Seguimiento"
@@ -134,7 +134,7 @@ export default function Portafolio() {
         </Grid>
 
         {/* PANEL: EMPRESAS DISPONIBLES */}
-        <Grid item xs={12} md={6}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Paper elevation={2} sx={{ p: { xs: 1.5, sm: 2, md: 3 }, borderRadius: 3, height: '100%' }}>
             <ListaPortafolio 
               titulo="Mercado Disponible"

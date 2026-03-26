@@ -47,7 +47,7 @@ function AdminPanel() {
             </Typography>
 
             <Grid container spacing={2} sx={{ mt: 1 }}>
-                <Grid item xs={12} sm={4}>
+                <Grid size={{ xs: 12, sm: 4 }}>
                     <Button
                         fullWidth
                         variant="contained"
@@ -59,7 +59,7 @@ function AdminPanel() {
                         Cargar Tickers (CSV)
                     </Button>
                 </Grid>
-                <Grid item xs={12} sm={4}>
+                <Grid size={{ xs: 12, sm: 4 }}>
                     <Button
                         fullWidth
                         variant="contained"
@@ -71,7 +71,7 @@ function AdminPanel() {
                         Actualizar Precios
                     </Button>
                 </Grid>
-                <Grid item xs={12} sm={4}>
+                <Grid size={{ xs: 12, sm: 4 }}>
                     <Button
                         fullWidth
                         variant="contained"

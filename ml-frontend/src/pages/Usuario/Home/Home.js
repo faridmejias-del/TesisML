@@ -95,7 +95,7 @@ export default function Home() {
 
       {/* SECCIÓN 1: KPIs (Tarjetas de Resumen) */}
       <Grid container spacing={3}>
-        <Grid item xs={12} sm={6} md={4}>
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
             <Card elevation={2} sx={{ borderRadius: 3, height: '100%' }}>
                 <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 3 }}>
                     <Avatar sx={{ bgcolor: 'primary.light', width: 56, height: 56 }}>
@@ -108,7 +108,7 @@ export default function Home() {
                 </CardContent>
             </Card>
         </Grid>
-        <Grid item xs={12} sm={6} md={4}>
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
             <Card elevation={2} sx={{ borderRadius: 3, height: '100%' }}>
                 <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 3 }}>
                     <Avatar sx={{ bgcolor: 'secondary.light', width: 56, height: 56 }}>
@@ -121,7 +121,7 @@ export default function Home() {
                 </CardContent>
             </Card>
         </Grid>
-        <Grid item xs={12} sm={12} md={4}>
+        <Grid size={{ xs: 12, sm: 12, md: 4 }}>
             <Card elevation={2} sx={{ borderRadius: 3, height: '100%', bgcolor: '#f8fafc', border: '1px solid #e2e8f0' }}>
                 <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 3 }}>
                     <Avatar sx={{ bgcolor: '#10b981', width: 56, height: 56 }}>
@@ -140,7 +140,7 @@ export default function Home() {
       <Grid container spacing={4}>
         
         {/* TOP PREDICCIONES IA */}
-        <Grid item xs={12} lg={7}>
+        <Grid size={{ xs: 12, lg: 7 }}>
             <Paper elevation={2} sx={{ p: 3, borderRadius: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <Typography variant="h6" fontWeight="bold" sx={{ mb: 2, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
                     <TrendingUpIcon color="success" /> Top Oportunidades en tu Portafolio
@@ -177,7 +177,7 @@ export default function Home() {
         </Grid>
 
         {/* ACCESOS RÁPIDOS */}
-        <Grid item xs={12} lg={5}>
+        <Grid size={{ xs: 12, lg: 5 }}>
             <Paper elevation={2} sx={{ p: 3, borderRadius: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <Typography variant="h6" fontWeight="bold" sx={{ mb: 2, color: 'text.primary' }}>
                     ¿Qué deseas hacer hoy?

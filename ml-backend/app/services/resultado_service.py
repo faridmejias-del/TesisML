@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from app.models.resultado import Resultado
 from datetime import datetime
+from app.exceptions import ResourceNotFoundError
 
 class ResultadoService:
     @staticmethod
@@ -34,3 +35,19 @@ class ResultadoService:
         return db.query(Resultado).filter(
             Resultado.IdModelo == id_modelo_ia
         ).order_by(Resultado.FechaAnalisis.desc()).all()
+
+    @staticmethod
+    def obtener_resultados_por_empresa(db: Session, empresa_id: int):
+        resultados = db.query(Resultado).filter(
+            Resultado.IdEmpresa == empresa_id
+        ).order_by(Resultado.FechaAnalisis.desc()).all()
+        
+        if not resultados:
+            # Levantamos la excepción que tu router ya está preparado para capturar
+            raise ResourceNotFoundError(message=f"No se encontraron resultados para la empresa {empresa_id}")
+            
+        return resultados
+    
+    @staticmethod
+    def obtener_todos_resultados(db: Session):
+        return db.query(Resultado).order_by(Resultado.FechaAnalisis.desc()).all()

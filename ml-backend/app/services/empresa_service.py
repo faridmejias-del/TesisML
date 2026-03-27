@@ -54,20 +54,24 @@ class EmpresaService:
 
     @staticmethod
     def obtener_todas_empresas(db: Session) -> list[Empresa]:
-        """Obtiene todas las empresas."""
-        return db.query(Empresa).all()
+        """Obtiene todas las empresas con su sector cargado."""
+        return db.query(Empresa).options(joinedload(Empresa.sector)).all()
 
     @staticmethod
     def obtener_empresa_por_id(db: Session, empresa_id: int) -> Empresa:
-        """Obtiene una empresa por su ID."""
-        empresa = db.query(Empresa).filter(Empresa.IdEmpresa == empresa_id).first()
+        """Obtiene una empresa por su ID con su sector cargado."""
+        empresa = db.query(Empresa).options(
+            joinedload(Empresa.sector)
+        ).filter(Empresa.IdEmpresa == empresa_id).first()
+        
         if not empresa:
             raise ResourceNotFoundError("Empresa", empresa_id)
         return empresa
     
     @staticmethod
     def obtener_empresas_activas(db: Session) -> list[Empresa]:
-        return db.query(Empresa).filter(Empresa.Activo == True).distinct().all()
+        """Obtiene las empresas activas con su sector cargado."""
+        return db.query(Empresa).filter(Empresa.Activo == True).options(joinedload(Empresa.sector)).all()
 
     @staticmethod
     def actualizar_empresa(db: Session, empresa_id: int, empresa_data: EmpresaUpdate) -> Empresa:

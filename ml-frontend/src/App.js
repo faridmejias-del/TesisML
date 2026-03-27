@@ -66,7 +66,7 @@ function App() {
             Cargando sección...
           </div>
         }>
-          <Toaster position="top-right" reverseOrder={false} />
+          <Toaster position="top-center" reverseOrder={false} />
           {/* RouterProvider reemplaza a BrowserRouter y Routes */}
           <RouterProvider router={router} />
         </Suspense>

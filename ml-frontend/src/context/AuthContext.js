@@ -1,6 +1,6 @@
 // ml-frontend/src/context/AuthContext.js
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+// 1. ELIMINAMOS useNavigate
 import { authService, api } from 'services'; 
 
 const AuthContext = createContext();
@@ -14,7 +14,6 @@ const ROLES = {
 export function AuthProvider({ children }) {
   const [usuario, setUsuario] = useState(null);
   const [cargando, setCargando] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const inicializarSesion = async () => {
@@ -54,27 +53,18 @@ export function AuthProvider({ children }) {
   const login = async (email, password) => {
     try {
       await authService.login(email, password);
-
-      // Ahora simplemente llamamos a nuestro propio endpoint /me
-      // para obtener los datos normalizados, en lugar de consultar /usuarios/email/
       const userInfo = await authService.verificarSesion();
 
       localStorage.setItem('usuario', JSON.stringify(userInfo));
       setUsuario(userInfo);
 
-      if (userInfo.rol === 'admin') {
-        navigate('/panel');
-      } else {
-        navigate('/home');
-      }
-
-      return { success: true };
+      // 2. YA NO NAVEGAMOS AQUÍ. Devolvemos el usuario para que el componente decida.
+      return { success: true, usuario: userInfo };
       
     } catch (error) {
-      console.error("Error de autenticación:", error);
       return { 
         success: false, 
-        message: error.response?.data?.detail || "Error al verificar las credenciales" 
+        message: error.response?.data?.detail || "Error de credenciales" 
       };
     }
   };
@@ -101,22 +91,17 @@ export function AuthProvider({ children }) {
 
   const logout = async () => {
     try {
-        // NUEVO: Pedirle al backend que destruya la cookie
-        await authService.logout();
-    } catch (error) {
-        console.error("Error al cerrar sesión en el servidor", error);
+      await authService.logout();
     } finally {
-        // Limpiar frontend independientemente de si el backend falló
-        localStorage.removeItem('usuario');
-        setUsuario(null);
-        navigate('/login');
+      localStorage.removeItem('usuario');
+      setUsuario(null);
     }
   };
 
   if (cargando) return <div style={{display: 'flex', justifyContent:'center', marginTop:'20vh'}}>Cargando sesión...</div>;
 
   return (
-    <AuthContext.Provider value={{ usuario, login, logout, registro, actualizarDatos}}>
+    <AuthContext.Provider value={{ usuario, login, logout, cargando, actualizarDatos, registro }}>
       {children}
     </AuthContext.Provider>
   );

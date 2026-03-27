@@ -1,22 +1,19 @@
-# app/db/session.py
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.declarative import declarative_base # <- Importación recuperada
 from app.core.config import settings
 
+# Forzamos la desactivación de prepared statements para evitar errores de duplicidad
 engine = create_engine(
     settings.DATABASE_URL,
-    pool_size=20,
-    max_overflow=10,
-    pool_pre_ping=True,
-    pool_recycle=300,
-    # SOLUCIÓN: Desactivar los prepared statements para el pooler de Supabase
-    connect_args={
-        "connect_timeout": 10
+    execution_options={
+        "prepared_statement_cache_size": 0
     }
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# ESTA ES LA LÍNEA CLAVE QUE FALTABA
 Base = declarative_base()
 
 def get_db():

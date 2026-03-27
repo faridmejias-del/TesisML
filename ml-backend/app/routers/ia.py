@@ -11,18 +11,12 @@ import os
 router = APIRouter(prefix="/api/v1/ia", tags=["IA Engine"])
 
 @router.post("/analizar-todo")
-async def analizar_todas_las_empresas(request: Request,
-                                        background_tasks: BackgroundTasks, 
-                                        db: Session = Depends(get_db)):
-    model_v1 = request.app.state.model_v1
-    scaler = request.app.state.scaler
-    # Usamos BackgroundTasks para que FastAPI responda "OK" de inmediato 
-    # mientras el servidor trabaja con TensorFlow por detrás.
-    background_tasks.add_task(ejecutar_analisis_diario, db, model_v1, scaler)
+async def analizar_todas_las_empresas(background_tasks: BackgroundTasks):
+    background_tasks.add_task(ejecutar_analisis_diario)
     
     return {
         "status": "success",
-        "message": "Análisis masivo de IA iniciado."
+        "message": "Análisis masivo de IA iniciado en segundo plano."
     }
 @router.get("/metricas")
 def obtener_metricas_modelo():

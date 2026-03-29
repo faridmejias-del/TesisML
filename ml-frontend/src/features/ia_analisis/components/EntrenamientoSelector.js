@@ -1,47 +1,18 @@
 // ml-frontend/src/components/EntrenamientoSelector.js
-import React, { useState, useEffect } from 'react';
-import { iaService } from 'services';
+import React from 'react';
+import { useEntrenamientoIA } from '../hooks/useEntrenamientoIA';
 
-function EntrenamientoSelector() {
-    const [modelos, setModelos] = useState([]);
-    const [modeloSeleccionado, setModeloSeleccionado] = useState('');
-    const [entrenando, setEntrenando] = useState(false);
+export default function EntrenamientoSelector() {
+    const { modelos, modeloSeleccionado, setModeloSeleccionado, entrenando, ejecutarEntrenamiento } = useEntrenamientoIA();
 
-    // Cargar los modelos al iniciar el componente
-    useEffect(() => {
-        const fetchModelos = async () => {
-            try {
-                const data = await iaService.obtenerModelosActivos();
-                setModelos(data);
-                if (data.length > 0) {
-                    setModeloSeleccionado(data[0].IdModelo); // Selecciona el primero por defecto
-                }
-            } catch (error) {
-                console.error("Error al cargar modelos", error);
-            }
-        };
-        fetchModelos();
-    }, []);
-
-    const manejarEntrenamiento = async () => {
-        if (!modeloSeleccionado) return;
-        
+    // La capa visual se encarga de las APIs del navegador (DOM)
+    const solicitarConfirmacion = () => {
         const modeloInfo = modelos.find(m => m.IdModelo === parseInt(modeloSeleccionado));
-        const confirmar = window.confirm(`¿Iniciar entrenamiento solo para: ${modeloInfo.Nombre}?`);
-        if (!confirmar) return;
-
-        setEntrenando(true);
-        try {
-            const response = await iaService.entrenarModelo(modeloSeleccionado);
-            alert(response.message || "Entrenamiento iniciado en segundo plano.");
-        } catch (error) {
-            console.error(error);
-            alert("Error al intentar entrenar el modelo.");
-        } finally {
-            setEntrenando(false);
+        // En React Native, aquí usarías Alert.alert(). En web, window.confirm.
+        if (window.confirm(`¿Iniciar entrenamiento solo para: ${modeloInfo?.Nombre}?`)) {
+            ejecutarEntrenamiento();
         }
     };
-
     return (
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: '#f8fafc', padding: '15px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
             <div>
@@ -61,7 +32,7 @@ function EntrenamientoSelector() {
             </div>
 
             <button 
-                onClick={manejarEntrenamiento}
+                onClick={solicitarConfirmacion}
                 disabled={entrenando || modelos.length === 0}
                 style={{
                     backgroundColor: entrenando ? '#94a3b8' : '#8b5cf6', // Color morado IA
@@ -80,4 +51,3 @@ function EntrenamientoSelector() {
     );
 }
 
-export default EntrenamientoSelector;

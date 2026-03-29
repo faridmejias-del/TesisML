@@ -8,6 +8,7 @@ import { useEmpresas } from '../../../features/empresas/hooks/useEmpresas';
 import EmpresaTable from '../../../features/empresas/components/EmpresaTable';
 import PrecioChart from '../../../features/mercado/components/PrecioChart';
 import ResultadoPanel from '../../../features/ia_analisis/components/ResultadoPanel';
+import ErrorBoundary from '../../../components/ErrorBoundary';
 
 export default function Mercado() {
   const [empresaSeleccionada, setEmpresaSeleccionada] = useState({ id: null, nombre: "" });
@@ -68,8 +69,10 @@ export default function Mercado() {
                             <CircularProgress size={24} color="primary" />
                         </Box>
                     )}
+                {/* Envolvemos la gráfica */}
+                <ErrorBoundary mensajeFallo="Error al renderizar el gráfico histórico.">
                     <PrecioChart empresaId={empresaSeleccionada.id} nombreEmpresa={empresaSeleccionada.nombre} />
-                </Paper>
+                </ErrorBoundary>                </Paper>
             </Grid>
             
             {/* Panel de Resultados IA */}
@@ -85,8 +88,10 @@ export default function Mercado() {
                         opacity: isPending ? 0.7 : 1
                     }}
                 >
+                {/* Envolvemos el Panel IA */}
+                <ErrorBoundary mensajeFallo="Error al evaluar la predicción de IA.">
                     <ResultadoPanel empresaId={empresaSeleccionada.id} />
-                </Paper>
+                </ErrorBoundary>                </Paper>
             </Grid>
         </Grid>
 

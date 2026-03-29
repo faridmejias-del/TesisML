@@ -4,38 +4,47 @@ import { Box, Paper, Typography, TextField, MenuItem, FormControlLabel, Checkbox
 import { useEmpresaForm } from '../hooks/useEmpresaForm';
 
 export default function EmpresaForm({ empresaInicial, onSave, onCancel }) {
-  // Consumimos la lógica separada
-  const { formData, sectores, handleChange, handleSubmit } = useEmpresaForm(empresaInicial, onSave);
+  // Consumimos el hook que ahora nos entrega las herramientas de react-hook-form
+  const { sectores, register, errors, onSubmit } = useEmpresaForm(empresaInicial, onSave);
 
   return (
     <Paper elevation={0} sx={{ p: 3, backgroundColor: '#f8fafc', borderRadius: '12px' }}>
-      <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+      {/* Usamos onSubmit directamente sin preventDefault, RHF lo maneja por nosotros */}
+      <Box component="form" onSubmit={onSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
         <Typography variant="h6" fontWeight="bold" color="text.primary">
           {empresaInicial ? 'Editar' : 'Nueva'} Empresa
         </Typography>
         
         <TextField 
-          label="Ticker (ej: AAPL)" name="Ticket" value={formData.Ticket} 
-          onChange={handleChange} required fullWidth size="small"
+          label="Ticker (ej: AAPL)" 
+          size="small" fullWidth
+          {...register("Ticket", { required: "El Ticker es obligatorio" })}
+          error={!!errors.Ticket}
+          helperText={errors.Ticket?.message}
         />
 
         <TextField 
-          label="Nombre de la Empresa" name="NombreEmpresa" value={formData.NombreEmpresa} 
-          onChange={handleChange} required fullWidth size="small"
+          label="Nombre de la Empresa" 
+          size="small" fullWidth
+          {...register("NombreEmpresa", { required: "El nombre es obligatorio" })}
+          error={!!errors.NombreEmpresa}
+          helperText={errors.NombreEmpresa?.message}
         />
 
         <TextField
-          select label="Seleccione Sector" name="IdSector" value={formData.IdSector}
-          onChange={handleChange} required fullWidth size="small"
+          select label="Seleccione Sector" 
+          size="small" fullWidth defaultValue={empresaInicial?.IdSector || ""}
+          {...register("IdSector", { required: "Debes seleccionar un sector" })}
+          error={!!errors.IdSector}
+          helperText={errors.IdSector?.message}
         >
-          <MenuItem value="" disabled><em>Seleccione Sector</em></MenuItem>
           {sectores.map(s => (
             <MenuItem key={s.IdSector} value={s.IdSector}>{s.NombreSector}</MenuItem>
           ))}
         </TextField>
 
         <FormControlLabel 
-          control={<Checkbox name="Activo" checked={formData.Activo} onChange={handleChange} color="primary" />} 
+          control={<Checkbox defaultChecked={empresaInicial?.Activo ?? true} {...register("Activo")} color="primary" />} 
           label="¿Empresa Activa?" 
         />
 

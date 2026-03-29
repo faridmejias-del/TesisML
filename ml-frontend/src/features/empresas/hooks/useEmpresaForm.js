@@ -1,44 +1,37 @@
 // src/features/empresas/hooks/useEmpresaForm.js
 import { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
 import { sectorService } from '../../../services';
 
 export const useEmpresaForm = (empresaInicial, onSave) => {
-  const [formData, setFormData] = useState({
-    Ticket: '',
-    NombreEmpresa: '',
-    IdSector: '',
-    Activo: true
-  });
-  const [sectores, setSectores] = useState([]);
+    const [sectores, setSectores] = useState([]);
 
-  // Cargar sectores
-  useEffect(() => {
-    const cargarSectores = async () => {
-      try {
-        const data = await sectorService.getAll();
-        setSectores(data);
-      } catch (error) {
-        console.error("Error al cargar sectores", error);
-      }
+    // Inicializamos react-hook-form
+    const { register, handleSubmit, reset, formState: { errors } } = useForm({
+        defaultValues: empresaInicial || { Ticket: '', NombreEmpresa: '', IdSector: '', Activo: true }
+    });
+
+    useEffect(() => {
+        const cargarSectores = async () => {
+            try {
+                const data = await sectorService.getAll();
+                setSectores(data);
+            } catch (error) {
+                console.error("Error al cargar sectores", error);
+            }
+        };
+        cargarSectores();
+        
+        // Si cambia la empresaInicial (ej: editar otra), reseteamos el formulario
+        if (empresaInicial) reset(empresaInicial);
+    }, [empresaInicial, reset]);
+
+    const onSubmit = (data) => {
+        // Transformaciones previas al guardado
+        data.Ticket = data.Ticket.toUpperCase();
+        onSave(data);
     };
-    cargarSectores();
 
-    if (empresaInicial) setFormData(empresaInicial);
-  }, [empresaInicial]);
-
-  // Manejador centralizado
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : (name === 'Ticket' ? value.toUpperCase() : value)
-    }));
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSave(formData);
-  };
-
-  return { formData, sectores, handleChange, handleSubmit };
+    // Exportamos handleSubmit ya envuelto con nuestra función onSubmit
+    return { sectores, register, errors, onSubmit: handleSubmit(onSubmit) };
 };

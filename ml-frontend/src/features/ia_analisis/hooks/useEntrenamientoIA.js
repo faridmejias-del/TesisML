@@ -1,34 +1,29 @@
 // src/features/ia_analisis/hooks/useEntrenamientoIA.js
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query'; // Aprovechando que ya tienes React Query
 import { iaService } from '../../../services';
 import toast from 'react-hot-toast';
 
 export const useEntrenamientoIA = () => {
-    const [modelos, setModelos] = useState([]);
     const [modeloSeleccionado, setModeloSeleccionado] = useState('');
     const [entrenando, setEntrenando] = useState(false);
 
-    useEffect(() => {
-        const fetchModelos = async () => {
-            try {
-                const data = await iaService.obtenerModelosActivos();
-                setModelos(data);
-                if (data.length > 0) setModeloSeleccionado(data[0].IdModelo);
-            } catch (error) {
-                console.error("Error al cargar modelos", error);
-            }
-        };
-        fetchModelos();
-    }, []);
+    const { data: modelos = [] } = useQuery({
+        queryKey: ['modelos_activos'],
+        queryFn: async () => {
+            const data = await iaService.obtenerModelosActivos();
+            if (data.length > 0) setModeloSeleccionado(data[0].IdModelo);
+            return data;
+        },
+        staleTime: 1000 * 60 * 60,
+    });
 
-    const manejarEntrenamiento = async () => {
+    // Eliminamos window.confirm de aquí. La función solo recibe la orden de entrenar.
+    const ejecutarEntrenamiento = async () => {
         if (!modeloSeleccionado) return;
-        
-        const modeloInfo = modelos.find(m => m.IdModelo === parseInt(modeloSeleccionado));
-        if (!window.confirm(`¿Iniciar entrenamiento solo para: ${modeloInfo.Nombre}?`)) return;
-
         setEntrenando(true);
         const idNoti = toast.loading("Entrenando modelo en segundo plano...");
+        
         try {
             const response = await iaService.entrenarModelo(modeloSeleccionado);
             toast.success(response.message || "Entrenamiento iniciado", { id: idNoti });
@@ -39,5 +34,5 @@ export const useEntrenamientoIA = () => {
         }
     };
 
-    return { modelos, modeloSeleccionado, setModeloSeleccionado, entrenando, manejarEntrenamiento };
+    return { modelos, modeloSeleccionado, setModeloSeleccionado, entrenando, ejecutarEntrenamiento };
 };

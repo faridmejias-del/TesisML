@@ -1,54 +1,36 @@
-// src/components/EmpresaTable.js
-import React, { useState, useEffect, useRef } from 'react';
+// src/features/empresas/components/EmpresaTable.js
+import React, { useState, useRef } from 'react';
 import { 
     Box, Paper, Typography, CircularProgress, Chip, IconButton, Tooltip,
     Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
     TextField, InputAdornment 
 } from '@mui/material';
 import { ChevronLeft, ChevronRight, Edit, Delete, Search } from '@mui/icons-material';
-import { empresaService } from 'services'; 
 
-function EmpresaTable({ onSelect = () => {}, esAdmin = false, onEdit, onDelete }) {
-    const [empresas, setEmpresas] = useState([]);
-    const [sectores, setSectores] = useState([]);
+// El componente AHORA recibe los datos por props, no los busca él mismo
+function EmpresaTable({ 
+    empresas = [], 
+    sectores = [], 
+    cargando = false,
+    onSelect = () => {}, 
+    esAdmin = false, 
+    onEdit, 
+    onDelete 
+}) {
     const [sectorSeleccionado, setSectorSeleccionado] = useState('todos'); 
-    const [busqueda, setBusqueda] = useState(''); // NUEVO ESTADO: Texto de búsqueda
-    const [cargando, setCargando] = useState(true);
-
-    // Referencia para controlar el scroll de la barra de sectores
+    const [busqueda, setBusqueda] = useState(''); 
     const scrollRef = useRef(null);
 
-    useEffect(() => {
-        const cargarDatos = async () => {
-            try {
-                const data = await empresaService.obtenerEmpresasConSectores();
-                setEmpresas(data.empresas);
-                setSectores(data.sectores);
-            } catch (error) {
-                console.error("Error cargando tabla de empresas:", error);
-            } finally {
-                setCargando(false);
-            }
-        };
-        cargarDatos();
-    }, []);
-
-    // NUEVA LÓGICA DE FILTRADO COMBINADA (Sector + Búsqueda de Texto)
     const empresasAMostrar = empresas.filter((emp) => {
-        // 1. Filtro por sector
         const coincideSector = sectorSeleccionado === 'todos' || emp.IdSector === sectorSeleccionado;
-        
-        // 2. Filtro por búsqueda (Nombre o Ticker)
         const termino = busqueda.toLowerCase().trim();
         const coincideBusqueda = 
             emp.NombreEmpresa.toLowerCase().includes(termino) || 
             emp.Ticket.toLowerCase().includes(termino);
 
-        // Ambas condiciones deben cumplirse
         return coincideSector && coincideBusqueda;
     });
 
-    // Función para desplazar la barra lateralmente
     const desplazar = (direccion) => {
         if (scrollRef.current) {
             const cantidad = direccion === 'izq' ? -250 : 250;

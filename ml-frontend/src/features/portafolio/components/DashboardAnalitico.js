@@ -14,7 +14,6 @@ const DashboardAnalitico = () => {
 
     return (
         <Box sx={{ mt: 4, mb: 4 }}>
-            <Typography variant="h5" gutterBottom>Dashboard Analítico de tu Portafolio</Typography>
             
             <Grid container spacing={3}>
                 {/* Métricas Resumen */}

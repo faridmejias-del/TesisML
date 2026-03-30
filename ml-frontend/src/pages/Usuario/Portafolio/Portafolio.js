@@ -4,6 +4,7 @@ import { Box, Typography, Paper, Grid, CircularProgress } from '@mui/material';
 import { useAuth } from '../../../context'; // Ajustar ruta
 import { usePortafolio } from '../../../features/portafolio/hooks/usePortafolio';
 import ListaPortafolio from '../../../features/portafolio/components/ListaPortafolio';
+import ShowChartIcon from '@mui/icons-material/ShowChart';
 
 export default function Portafolio() {
   const { usuario } = useAuth();
@@ -28,10 +29,18 @@ export default function Portafolio() {
   );
 
   return (
-    <Box sx={{ width: '100%', pb: 4 }}>
-      <Typography variant="h4" fontWeight="bold" color="text.primary" sx={{ mb: 4, pt: {xs: 2, lg: 0} }}>
-        Gestionar Mi Portafolio
-      </Typography>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%', maxWidth: '1400px', margin: '0 auto', pb: 4 }}>
+
+      <Paper elevation={2} sx={{ p: 3, borderRadius: 3, display: 'flex', alignItems: 'center', gap: 3 }}>
+            <Box sx={{ backgroundColor: 'primary.main', p: 1.5, borderRadius: 2, display: 'flex', color: 'white', boxShadow: 2 }}>
+            <ShowChartIcon fontSize="large" />
+            </Box>
+            <Box>
+                <Typography variant="h4" fontWeight="bold" color="text.primary">
+                Gestionar Mi Portafolio
+                </Typography>
+            </Box>
+        </Paper>
 
       <Grid container spacing={{ xs: 2, md: 3, lg: 4 }} alignItems="stretch">
         

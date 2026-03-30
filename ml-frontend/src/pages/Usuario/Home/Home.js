@@ -7,12 +7,14 @@ import {
   ListItemText, Divider, Chip 
 } from '@mui/material';
 
+// Importaciones para el gráfico de Anillo
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+
 // Context & Hooks
 import { useAuth } from '../../../context';
 import { useDashboard } from '../../../features/dashboard/hooks/useDashboard';
 
 // Iconos
-import QueryStatsIcon from '@mui/icons-material/QueryStats';
 import BusinessCenterIcon from '@mui/icons-material/BusinessCenter';
 import PieChartIcon from '@mui/icons-material/PieChart';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
@@ -21,6 +23,10 @@ import TrendingFlatIcon from '@mui/icons-material/TrendingFlat';
 import AnalyticsIcon from '@mui/icons-material/Analytics';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import AutoGraphIcon from '@mui/icons-material/AutoGraph';
+import ShowChartIcon from '@mui/icons-material/ShowChart';
+
+// Paleta de colores para el gráfico de anillo
+const COLORES_SECTORES = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'];
 
 export default function Home() {
   const { usuario } = useAuth();
@@ -51,20 +57,22 @@ export default function Home() {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%', maxWidth: '1400px', margin: '0 auto', pb: 4 }}>
       
-      {/* HEADER: Saludo */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, mb: 1 }}>
-        <Box sx={{ backgroundColor: 'primary.main', p: 1.5, borderRadius: 2, display: 'flex', color: 'white', boxShadow: 2 }}>
-            <QueryStatsIcon fontSize="large" />
-        </Box>
-        <Box>
-            <Typography variant="h4" fontWeight="bold" color="text.primary">
-              ¡Hola, {usuario?.nombre?.split(' ')[0] || 'Inversor'}!
-            </Typography>
-            <Typography variant="body1" color="text.secondary">
-              Aquí tienes un resumen de tu portafolio y las últimas señales del mercado.
-            </Typography>
-        </Box>
-      </Box>
+        {/* HEADER: Saludo */}
+
+        <Paper elevation={2} sx={{ p: 3, borderRadius: 3, display: 'flex', alignItems: 'center', gap: 3 }}>
+            <Box sx={{ backgroundColor: 'primary.main', p: 1.5, borderRadius: 2, display: 'flex', color: 'white', boxShadow: 2 }}>
+            <ShowChartIcon fontSize="large" />
+            </Box>
+            <Box>
+                <Typography variant="h4" fontWeight="bold" color="text.primary">
+                ¡Hola, {usuario?.nombre?.split(' ')[0] || 'Inversor'}!
+                </Typography>
+                <Typography variant="body1" color="text.secondary">
+                Aquí tienes un resumen de tu portafolio y las últimas señales del mercado.
+                </Typography>
+            </Box>
+        </Paper>
+
 
       {/* SECCIÓN 1: KPIs Principales */}
       <Grid container spacing={3}>
@@ -165,7 +173,6 @@ export default function Home() {
                                     } 
                                 />
 
-                                {/* AQUI ESTA LA MAGIA VISUAL: Precios reales */}
                                 <Box sx={{ textAlign: 'right', minWidth: '100px' }}>
                                     <Typography variant="body2" color="text.secondary" fontWeight="medium">
                                         Actual: ${emp.precioActual.toFixed(4)}
@@ -194,34 +201,49 @@ export default function Home() {
                     <Button component={RouterLink} to="/mercado" variant="contained" color="primary" size="large" startIcon={<AnalyticsIcon />} sx={{ py: 2, justifyContent: 'flex-start', borderRadius: 2, fontWeight: 'bold' }}>
                         Ir al Análisis de Mercado
                     </Button>
-                    <Typography variant="caption" color="text.secondary" sx={{ mt: -1, mb: 1, pl: 1 }}>
-                        Explora gráficos de tus empresas y métricas técnicas como el RSI o MACD.
-                    </Typography>
 
                     <Button component={RouterLink} to="/gestionar-portafolio" variant="outlined" color="primary" size="large" startIcon={<AccountBalanceWalletIcon />} sx={{ py: 2, justifyContent: 'flex-start', borderRadius: 2, fontWeight: 'bold' }}>
                         Configurar mi Portafolio
                     </Button>
-                    <Typography variant="caption" color="text.secondary" sx={{ mt: -1, pl: 1 }}>
-                        Agrega o elimina empresas para que la IA comience a analizarlas.
-                    </Typography>
                 </Box>
 
+                {/* AQUÍ ESTÁ EL NUEVO GRÁFICO DE ANILLO */}
                 {estadisticas.distribucionSectores.length > 0 && (
-                    <Box sx={{ mt: 'auto', pt: 4 }}>
-                        <Typography variant="subtitle2" color="text.secondary" fontWeight="bold" mb={1.5}>
+                    <Box sx={{ mt: 4, flexGrow: 1, display: 'flex', flexDirection: 'column', minHeight: '250px' }}>
+                        <Typography variant="subtitle2" color="text.secondary" fontWeight="bold" align="center" mb={1}>
                             TU PORTAFOLIO POR SECTORES
                         </Typography>
-                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                            {estadisticas.distribucionSectores.map(sec => (
-                                <Chip 
-                                    key={sec.nombre} 
-                                    label={`${sec.nombre} (${sec.cantidad})`} 
-                                    size="small" 
-                                    variant="outlined" 
-                                    sx={{ fontWeight: '500' }}
+                        
+                        <ResponsiveContainer width="100%" height={300}>
+                            <PieChart>
+                                <Pie
+                                    data={estadisticas.distribucionSectores}
+                                    dataKey="cantidad"
+                                    nameKey="nombre"
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={60}
+                                    outerRadius={80}
+                                    paddingAngle={5}
+                                    animationBegin={200}
+                                    animationDuration={800}
+                                >
+                                    {estadisticas.distribucionSectores.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={COLORES_SECTORES[index % COLORES_SECTORES.length]} />
+                                    ))}
+                                </Pie>
+                                <Tooltip 
+                                    formatter={(value) => [`${value} Empresas`, 'Cantidad']}
+                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                                 />
-                            ))}
-                        </Box>
+                                <Legend 
+                                    verticalAlign="bottom" 
+                                    height={36} 
+                                    iconType="circle"
+                                    wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
+                                />
+                            </PieChart>
+                        </ResponsiveContainer>
                     </Box>
                 )}
             </Paper>

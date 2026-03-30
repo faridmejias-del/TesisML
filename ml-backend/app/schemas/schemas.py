@@ -244,3 +244,23 @@ class RecuperarPassword(BaseModel):
 class ResetearPasswordRequest(BaseModel):
     token: str = Field(..., description="Token JWT enviado por email")
     nueva_password: str = Field(..., description="Nueva password")
+
+
+# ========================= ANALISIS PORTAFOLIO SCHEMAS =========================
+class DistribucionSector(BaseModel):
+    sector: str
+    cantidad: int
+    porcentaje: float
+
+class RendimientoHistorico(BaseModel):
+    fecha: str
+    valor_total: float
+
+class MetricasRiesgo(BaseModel):
+    volatilidad: float
+    sharpe_ratio: float
+
+class AnalisisPortafolioOut(BaseModel):
+    distribucion_sectores: List[DistribucionSector]
+    rendimiento_historico: List[RendimientoHistorico]
+    metricas: MetricasRiesgo

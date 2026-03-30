@@ -13,6 +13,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import AnalyticsIcon from '@mui/icons-material/Analytics';
 import AreaChartIcon from '@mui/icons-material/AreaChart';
+import PieChartIcon from '@mui/icons-material/PieChart';
 
 const drawerWidth = 250;
 
@@ -72,6 +73,25 @@ export default function UserLayout() {
           >
             <ListItemIcon sx={{ color: 'inherit', minWidth: 40 }}><AccountBalanceWalletIcon /></ListItemIcon>
             <ListItemText primary="Gestionar Portafolio" primaryTypographyProps={{ fontWeight: 500 }} />
+          </ListItemButton>
+        </ListItem>
+
+        {/* ANÁLISIS DE PORTAFOLIO */}        
+        <ListItem disablePadding sx={{ mb: 1 }}>
+          <ListItemButton 
+            component={RouterLink} 
+            to="/analisis-portafolio"
+            selected={isActivo('/analisis-portafolio')}
+            onClick={() => setMobileOpen(false)}
+            sx={{ 
+              borderRadius: 2,
+              '&.Mui-selected': { backgroundColor: '#34495e' },
+              '&.Mui-selected:hover': { backgroundColor: '#34495e' },
+              '&:hover': { backgroundColor: 'rgba(255,255,255,0.05)' }
+            }}
+          >
+            <ListItemIcon sx={{ color: 'inherit', minWidth: 40 }}><PieChartIcon /></ListItemIcon>
+            <ListItemText primary="Análisis de Portafolio" primaryTypographyProps={{ fontWeight: 500 }} />
           </ListItemButton>
         </ListItem>
 

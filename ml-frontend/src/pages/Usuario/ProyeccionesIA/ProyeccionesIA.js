@@ -4,7 +4,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { useProyeccionesIA } from '../../../features/portafolio/hooks/useProyeccionesIA';
 import TarjetaProyeccion from '../../../features/ia_analisis/components/TarjetaProyeccion';
 import GraficoComparativo from '../../../features/ia_analisis/components/GraficoComparativo';
-import { Box, Typography, Paper, FormControl, InputLabel, Select, MenuItem, Checkbox, FormControlLabel } from '@mui/material'; 
+import { Box, Typography, Paper, FormControl, InputLabel, Select, MenuItem } from '@mui/material'; 
 import ShowChartIcon from '@mui/icons-material/ShowChart';
 
 const VistaProyecciones = () => {

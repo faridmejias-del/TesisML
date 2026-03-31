@@ -109,7 +109,11 @@ export default function Landing() {
             </Box>
 
             <Dialog 
-                open={modalAuth.open} onClose={cerrarModalAuth} maxWidth="xs" fullWidth
+                open={modalAuth.open} 
+                onClose={cerrarModalAuth} 
+                maxWidth="xs" 
+                fullWidth
+                disableRestoreFocus // <-- 1. AGREGA ESTA LÍNEA
                 PaperProps={{ sx: { borderRadius: 4, p: 1 } }}
             >
                 <DialogContent sx={{ position: 'relative' }}>

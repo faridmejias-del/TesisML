@@ -90,6 +90,7 @@ function AuthForm({ modoInicialRegistro = false }) {
                     <TextField 
                         label="Nombre" variant="outlined" fullWidth required 
                         value={nombre} onChange={(e) => setNombre(e.target.value)}
+                        autoFocus
                         InputProps={{
                             startAdornment: (
                                 <InputAdornment position="start"><PersonIcon color="action" fontSize="small" /></InputAdornment>
@@ -99,6 +100,7 @@ function AuthForm({ modoInicialRegistro = false }) {
                     <TextField 
                         label="Apellido" variant="outlined" fullWidth required 
                         value={apellido} onChange={(e) => setApellido(e.target.value)}
+                        autoFocus
                     />
                 </Box>
             )}
@@ -106,6 +108,7 @@ function AuthForm({ modoInicialRegistro = false }) {
             <TextField 
                 label="Correo Electrónico" type="email" variant="outlined" fullWidth required 
                 value={email} onChange={(e) => setEmail(e.target.value)} 
+                autoFocus
                 InputProps={{
                     startAdornment: (<InputAdornment position="start"><EmailIcon color="action" /></InputAdornment>),
                 }}
@@ -114,6 +117,7 @@ function AuthForm({ modoInicialRegistro = false }) {
             <TextField 
                 label="Contraseña" type="password" variant="outlined" fullWidth required 
                 value={password} onChange={(e) => setPassword(e.target.value)} 
+                autoFocus
                 InputProps={{
                     startAdornment: (<InputAdornment position="start"><LockIcon color="action" /></InputAdornment>),
                 }}

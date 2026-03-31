@@ -14,6 +14,7 @@ import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import AnalyticsIcon from '@mui/icons-material/Analytics';
 import AreaChartIcon from '@mui/icons-material/AreaChart';
 import PieChartIcon from '@mui/icons-material/PieChart';
+import NewspaperIcon from '@mui/icons-material/Newspaper';
 
 const drawerWidth = 250;
 
@@ -114,6 +115,28 @@ export default function UserLayout() {
             <ListItemText primary="Proyecciones IA" primaryTypographyProps={{ fontWeight: 500 }} />
           </ListItemButton>
         </ListItem> 
+
+
+
+
+        {/* NOTICIAS FINANCIERAS */}
+        <ListItem disablePadding sx={{ mb: 1 }}>
+          <ListItemButton 
+            component={RouterLink} 
+            to="/noticias"
+            selected={isActivo('/noticias')}
+            onClick={() => setMobileOpen(false)}
+            sx={{ 
+              borderRadius: 2,
+              '&.Mui-selected': { backgroundColor: '#34495e' },
+              '&.Mui-selected:hover': { backgroundColor: '#34495e' },
+              '&:hover': { backgroundColor: 'rgba(255,255,255,0.05)' }
+            }}
+          >
+            <ListItemIcon sx={{ color: 'inherit', minWidth: 40 }}><NewspaperIcon /></ListItemIcon>
+            <ListItemText primary="Noticias Financieras" primaryTypographyProps={{ fontWeight: 500 }} />
+          </ListItemButton>
+        </ListItem>
 
 
 

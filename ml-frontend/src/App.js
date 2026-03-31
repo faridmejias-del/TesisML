@@ -17,6 +17,7 @@ const Portafolio = lazy(() => import('pages/Usuario/Portafolio/Portafolio'));
 const Mercado = lazy(() => import('pages/Usuario/Mercado/Mercado'));
 const ProyeccionesIA = lazy(() => import('pages/Usuario/ProyeccionesIA/ProyeccionesIA'));
 const AnalisisPortafolio = lazy(() => import('pages/Usuario/AnalisisPortafolio/AnalisisPortafolio'));
+const Noticias = lazy(() => import('pages/Usuario/Noticias/Noticias'));
 
 // IMPORTACIONES PEREZOSAS ADMIN (Aquí separamos en 3 vistas)
 const AdminTareas = lazy(() => import('pages/Admin/Tareas/Tareas'));
@@ -41,6 +42,7 @@ const router = createBrowserRouter([
       { path: "home", element: conSuspense(Home) },
       { path: "portafolio", element: conSuspense(Portafolio) },
       { path: "analisis-portafolio", element: conSuspense(AnalisisPortafolio) },
+      { path: "noticias", element: conSuspense(Noticias) },
       { path: "mercado", element: conSuspense(Mercado) },
       { path: "proyecciones-ia", element: conSuspense(ProyeccionesIA) },
     ],

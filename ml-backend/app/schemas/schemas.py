@@ -264,3 +264,15 @@ class AnalisisPortafolioOut(BaseModel):
     distribucion_sectores: List[DistribucionSector]
     rendimiento_historico: List[RendimientoHistorico]
     metricas: MetricasRiesgo
+
+
+# ========================= NOTICIAS SCHEMAS =========================
+class NoticiaOut(BaseModel):
+    id: int = Field(..., description="ID único de la noticia en Finnhub")
+    titular: str = Field(..., description="Titular de la noticia")
+    resumen: str = Field(..., description="Breve descripción")
+    url_noticia: str = Field(..., description="Link a la noticia completa")
+    url_imagen: str = Field(..., description="Imagen de portada de la noticia")
+    fuente: str = Field(..., description="Quién publicó la noticia (ej. Yahoo, Bloomberg)")
+    fecha_publicacion: datetime = Field(..., description="Fecha de publicación")
+    ticker_relacionado: str = Field(..., description="Símbolo de la empresa (ej. AAPL)")

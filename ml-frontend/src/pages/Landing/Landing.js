@@ -8,6 +8,9 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 
+// IMPORTAMOS EL NOMBRE DE LA APP
+import { APP_NAME } from 'config'; 
+
 // 1. IMPORTAMOS LOS COMPONENTES DESDE SUS NUEVOS FEATURES
 import AuthForm from '../../features/auth/components/AuthForm';
 import EmpresaTable from '../../features/empresas/components/EmpresaTable';
@@ -44,7 +47,7 @@ export default function Landing() {
             <AppBar position="static" color="inherit" elevation={1} sx={{ px: { xs: 2, md: '5%' } }}>
                 <Toolbar disableGutters sx={{ justifyContent: 'space-between' }}>
                     <Typography variant="h5" component="div" sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', color: 'text.primary' }}>
-                        TesisML
+                        {APP_NAME}
                     </Typography>
                     
                     <Box sx={{ display: 'flex', gap: 2 }}>

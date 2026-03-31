@@ -4,7 +4,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { useProyeccionesIA } from '../../../features/portafolio/hooks/useProyeccionesIA';
 import TarjetaProyeccion from '../../../features/ia_analisis/components/TarjetaProyeccion';
 import GraficoComparativo from '../../../features/ia_analisis/components/GraficoComparativo';
-import { Box, Typography, Paper, FormControl, InputLabel, Select, MenuItem } from '@mui/material'; 
+import { Box, Typography, Paper, FormControl, InputLabel, Select, MenuItem, CircularProgress} from '@mui/material'; 
 import ShowChartIcon from '@mui/icons-material/ShowChart';
 
 const VistaProyecciones = () => {
@@ -18,8 +18,13 @@ const VistaProyecciones = () => {
   const [sectorSeleccionado, setSectorSeleccionado] = useState('');
   const [empresasComparar, setEmpresasComparar] = useState([]);
 
-  if (cargando) return <div style={{ color: '#64748b', textAlign: 'center', padding: '2rem' }}>Generando proyecciones con IA...</div>;
-  if (error) return <div style={{ color: '#ef4444', textAlign: 'center', padding: '2rem' }}>{error}</div>;
+    if (cargando) {
+        return (
+            <Box display="flex" justifyContent="center" alignItems="center" p={6} gap={2} sx={{ width: '100%' }}>
+                <CircularProgress size={30} color="primary" />
+            </Box>
+        );
+}  if (error) return <div style={{ color: '#ef4444', textAlign: 'center', padding: '2rem' }}>{error}</div>;
 
   // Filtrado de las proyecciones a mostrar
   const proyeccionesFiltradas = proyecciones.filter(p => 

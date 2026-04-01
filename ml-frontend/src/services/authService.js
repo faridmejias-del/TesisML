@@ -27,10 +27,22 @@ const logout = async () => {
     return response.data;
 };
 
+const solicitarRecuperacion = async (email) => {
+  const response = await api.post('/auth/solicitar-recuperacion', {email});
+  return response.data;
+}
+
+const resetearPassword = async (token, nueva_password) => {
+  const response = await api.post('/auth/resetear-password', { token, nueva_password });
+  return response.data;
+}
+
 const authService = {
   login,
   verificarSesion,
-  logout
+  logout,
+  solicitarRecuperacion,
+  resetearPassword
 };
 
 export default authService;

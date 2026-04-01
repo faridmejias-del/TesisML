@@ -13,6 +13,8 @@ const Mercado = lazy(() => import('pages/Usuario/Mercado/Mercado'));
 const ProyeccionesIA = lazy(() => import('pages/Usuario/ProyeccionesIA/ProyeccionesIA'));
 const AnalisisPortafolio = lazy(() => import('pages/Usuario/AnalisisPortafolio/AnalisisPortafolio'));
 const Noticias = lazy(() => import('pages/Usuario/Noticias/Noticias'));
+const OlvidePassword = lazy(() => import('../pages/Landing/OlvidePassword'));
+const ResetPassword = lazy(() => import('../pages/Landing/ResetPassword'));
 
 // IMPORTACIONES PEREZOSAS ADMIN (Aquí separamos en 3 vistas)
 const AdminTareas = lazy(() => import('pages/Admin/Tareas/Tareas'));
@@ -31,6 +33,9 @@ const conSuspense = (Componente) => (
 
 const router = createBrowserRouter([
   { path: "/", element: conSuspense(Landing) },
+
+  { path: "/olvide-password", element: conSuspense(OlvidePassword) },
+  { path: "/reset-password", element: conSuspense(ResetPassword) },
   {
     element: <RutaProtegida rolPermitido="usuario"><UserLayout /></RutaProtegida>,
     children: [

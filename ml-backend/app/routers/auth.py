@@ -141,6 +141,7 @@ def solicitar_recuperacion(request: RecuperarPassword, db: Session = Depends(get
         expires_delta=timedelta(minutes=15)
     )
     
+    enlace = f"http://localhost:3000/reset-password?token={token_recuperacion}"
     # 2. Enviar el correo
     enviar_correo(
         destino=usuario.Email,
@@ -148,9 +149,9 @@ def solicitar_recuperacion(request: RecuperarPassword, db: Session = Depends(get
         mensaje=(
             f"Hola {usuario.Nombre},\n\n"
             "Has solicitado restablecer tu contraseña.\n\n"
-            f"Copia y pega el siguiente token en la API para cambiar tu contraseña (es válido por 15 minutos):\n\n"
-            f"{token_recuperacion}\n\n"
-            "Si no fuiste tú, por favor ignora este correo."
+            f"Para crear una nueva contraseña, haz clic en el siguiente enlace de forma segura:\n\n"
+            f"{enlace}\n\n"
+            "Este enlace es válido por 15 minutos. Si no fuiste tú, por favor ignora este correo."
         )
     )
     

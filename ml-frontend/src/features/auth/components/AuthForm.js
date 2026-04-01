@@ -1,7 +1,6 @@
-// src/components/AuthForm.js
 import React, { useState, useEffect } from 'react';
 import { useAuth } from 'context';
-import toast from 'react-hot-toast'; //
+import toast from 'react-hot-toast';
 import { 
     Box, 
     TextField, 
@@ -10,18 +9,19 @@ import {
     CircularProgress,
     InputAdornment,
     Divider,
-    Link
+    Link // Link de Material UI
 } from '@mui/material';
 import EmailIcon from '@mui/icons-material/Email';
 import LockIcon from '@mui/icons-material/Lock';
 import PersonIcon from '@mui/icons-material/Person';
+import { Link as RouterLink } from 'react-router-dom'; // Renombrado para evitar conflicto
 
 function AuthForm({ modoInicialRegistro = false }) {
     const { login, registro } = useAuth(); 
     
     const [esRegistro, setEsRegistro] = useState(modoInicialRegistro);
     
-    // Estados de los campos (se comparten entre login y registro)
+    // Estados de los campos
     const [nombre, setNombre] = useState('');
     const [apellido, setApellido] = useState('');
     const [email, setEmail] = useState('');
@@ -79,7 +79,6 @@ function AuthForm({ modoInicialRegistro = false }) {
 
             {esRegistro && (
                 <Box sx={{ display: 'flex', gap: 2 }}>
-                    {/* Quitamos los autoFocus innecesarios que en móvil abren el teclado de golpe */}
                     <TextField 
                         label="Nombre" required 
                         value={nombre} onChange={(e) => setNombre(e.target.value)}
@@ -105,13 +104,22 @@ function AuthForm({ modoInicialRegistro = false }) {
             />
 
             <Button 
-                // 3. MODIFICACIÓN CLAVE: Quitamos type="submit" y le pasamos el onClick directamente
                 onClick={handleSubmit} 
                 variant="contained" color="primary" size="large" fullWidth disabled={cargando}
                 sx={{ mt: 1, boxShadow: 3 }}
             >
                 {cargando ? <CircularProgress size={24} color="inherit" /> : (esRegistro ? 'Registrarse' : 'Ingresar al sistema')}
             </Button>
+
+            {/* --- NUEVO ENLACE DE RECUPERACIÓN DE CONTRASEÑA --- */}
+            {!esRegistro && (
+                <Typography variant="body2" align="center" sx={{ mt: 0.5 }}>
+                    <RouterLink to="/olvide-password" style={{ textDecoration: 'none', color: '#1976d2', fontWeight: '500' }}>
+                        ¿Olvidaste tu contraseña?
+                    </RouterLink>
+                </Typography>
+            )}
+            {/* -------------------------------------------------- */}
 
             <Typography align="center" variant="body2" sx={{ mt: 1 }}>
                 {esRegistro ? '¿Ya tienes cuenta? ' : '¿No tienes cuenta? '}
@@ -127,14 +135,12 @@ function AuthForm({ modoInicialRegistro = false }) {
 
             <Box 
                 sx={{ 
-                    // Cambiamos 'grey.100' por 'action.hover' o 'background.default'
-                    // Estas variables se invierten automáticamente en modo oscuro
                     bgcolor: 'action.hover', 
                     p: 1.5, 
                     borderRadius: 2, 
                     textAlign: 'center',
                     border: '1px solid',
-                    borderColor: 'divider' // Añadimos un borde sutil que también es dinámico
+                    borderColor: 'divider' 
                 }}
             >
                 <Typography variant="caption" fontWeight="bold" color="text.secondary" display="block" gutterBottom>

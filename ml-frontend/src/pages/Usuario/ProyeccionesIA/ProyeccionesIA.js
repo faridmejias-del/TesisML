@@ -5,8 +5,8 @@ import { useProyeccionesIA } from '../../../features/portafolio/hooks/useProyecc
 import TarjetaProyeccion from '../../../features/ia_analisis/components/TarjetaProyeccion';
 import GraficoComparativo from '../../../features/ia_analisis/components/GraficoComparativo';
 import { Box, Typography, Paper, FormControl, InputLabel, Select, MenuItem, CircularProgress} from '@mui/material'; 
-import ShowChartIcon from '@mui/icons-material/ShowChart';
 import PageHeader from '../../../components/PageHeader';
+import AreaChartIcon from '@mui/icons-material/AreaChart';
 
 const VistaProyecciones = () => {
   const { usuario } = useAuth(); 
@@ -49,7 +49,7 @@ const VistaProyecciones = () => {
         <PageHeader 
             titulo="Análisis Predictivo de tu Portafolio"
             subtitulo="Explora el directorio global, analiza el historial de precios y revisa las predicciones de la Inteligencia Artificial."
-            icono={ShowChartIcon} 
+            icono={AreaChartIcon} 
         />
 
         {/* CONTROLES: Filtro por Sector */}

@@ -6,23 +6,23 @@ const getTheme = (mode) => {
 
   return createTheme({
     palette: {
-      mode, // ¡Esto le dice a Material UI que estamos en modo claro u oscuro!
+      mode,
       primary: {
-        main: '#10b981', // Verde esmeralda (se ve bien en ambos modos)
+        // En modo oscuro, usamos un verde más claro y desaturado (#6ee7b7) 
+        // para que no brille tanto como el esmeralda puro
+        main: isLight ? '#10b981' : '#6ee7b7', 
         light: '#34d399',
         dark: '#059669',
-        contrastText: '#ffffff',
+        contrastText: isLight ? '#ffffff' : '#0b1121',
       },
       secondary: {
-        main: '#4f46e5', // Índigo
-        contrastText: '#ffffff',
+        main: isLight ? '#4f46e5' : '#818cf8', // Azul más suave en modo oscuro
+        contrastText: isLight ? '#ffffff' : '#0b1121',
       },
-      // Cambiamos los fondos generales dependiendo del modo
       background: {
-        default: isLight ? '#f8fafc' : '#0b1121', // Fondo de la página
-        paper: isLight ? '#ffffff' : '#111827',   // Fondo de las tarjetas
+        default: isLight ? '#f8fafc' : '#0b1121',
+        paper: isLight ? '#ffffff' : '#111827',
       },
-      // Menú lateral adaptativo
       layout: {
         sidebar: isLight ? '#2c3e50' : '#111827',       
         sidebarActive: isLight ? '#34495e' : '#1f2937', 
@@ -34,8 +34,8 @@ const getTheme = (mode) => {
         defaultText: isLight ? '#475569' : '#cbd5e1',
         defaultBorder: isLight ? '#e2e8f0' : '#374151',
         hoverBg: isLight ? '#f1f5f9' : '#374151',
-        sectorBg: isLight ? '#d1fae5' : 'rgba(16, 185, 129, 0.1)',    
-        sectorText: isLight ? '#047857' : '#34d399',  
+        sectorBg: isLight ? '#d1fae5' : 'rgba(110, 231, 183, 0.08)',    
+        sectorText: isLight ? '#047857' : '#6ee7b7',  
       },
       market: {
         cardDefault: {
@@ -51,22 +51,22 @@ const getTheme = (mode) => {
           badgeBg: isLight ? '#f1f5f9' : '#1f2937',
           badgeText: isLight ? '#64748b' : '#94a3b8',
         },
-        // En modo oscuro usamos fondos semi-transparentes (rgba) para que no brillen tanto
+        // Ajuste de Saturación en indicadores financieros
         strongPositive: { 
-            bg: isLight ? '#dcfce7' : 'rgba(22, 163, 74, 0.1)', 
-            text: isLight ? '#14532d' : '#4ade80', 
-            border: isLight ? '#bbf7d0' : 'rgba(34, 197, 94, 0.2)', 
-            icon: isLight ? '#166534' : '#4ade80', 
-            badgeBg: isLight ? '#bbf7d0' : 'rgba(34, 197, 94, 0.2)', 
-            badgeText: isLight ? '#166534' : '#4ade80' 
+            bg: isLight ? '#dcfce7' : 'rgba(110, 231, 183, 0.05)', 
+            text: isLight ? '#14532d' : '#86efac', // Verde menta suave
+            border: isLight ? '#bbf7d0' : 'rgba(134, 239, 172, 0.15)', 
+            icon: isLight ? '#166534' : '#86efac', 
+            badgeBg: isLight ? '#bbf7d0' : 'rgba(134, 239, 172, 0.1)', 
+            badgeText: isLight ? '#166534' : '#86efac' 
         },
         positive: { 
-            bg: isLight ? '#f0fdf4' : 'rgba(34, 197, 94, 0.05)', 
-            text: isLight ? '#166534' : '#4ade80', 
-            border: isLight ? '#dcfce7' : 'rgba(34, 197, 94, 0.1)', 
-            icon: isLight ? '#22c55e' : '#4ade80', 
-            badgeBg: isLight ? '#bbf7d0' : 'rgba(34, 197, 94, 0.2)', 
-            badgeText: isLight ? '#166534' : '#4ade80' 
+            bg: isLight ? '#f0fdf4' : 'rgba(110, 231, 183, 0.03)', 
+            text: isLight ? '#166534' : '#86efac', 
+            border: isLight ? '#dcfce7' : 'rgba(110, 231, 183, 0.1)', 
+            icon: isLight ? '#22c55e' : '#86efac', 
+            badgeBg: isLight ? '#bbf7d0' : 'rgba(110, 231, 183, 0.1)', 
+            badgeText: isLight ? '#166534' : '#86efac' 
         },
         neutral: { 
             bg: isLight ? '#f8fafc' : 'rgba(148, 163, 184, 0.05)', 
@@ -77,20 +77,20 @@ const getTheme = (mode) => {
             badgeText: isLight ? '#475569' : '#cbd5e1' 
         },
         negative: { 
-            bg: isLight ? '#fef2f2' : 'rgba(239, 68, 68, 0.05)', 
-            text: isLight ? '#991b1b' : '#f87171', 
-            border: isLight ? '#fee2e2' : 'rgba(239, 68, 68, 0.1)', 
-            icon: isLight ? '#ef4444' : '#f87171', 
-            badgeBg: isLight ? '#fecaca' : 'rgba(239, 68, 68, 0.2)', 
-            badgeText: isLight ? '#991b1b' : '#f87171' 
+            bg: isLight ? '#fef2f2' : 'rgba(248, 113, 113, 0.05)', 
+            text: isLight ? '#991b1b' : '#fca5a5', // Rojo rosado desaturado
+            border: isLight ? '#fee2e2' : 'rgba(248, 113, 113, 0.1)', 
+            icon: isLight ? '#ef4444' : '#fca5a5', 
+            badgeBg: isLight ? '#fecaca' : 'rgba(248, 113, 113, 0.1)', 
+            badgeText: isLight ? '#991b1b' : '#fca5a5' 
         },
         strongNegative: { 
-            bg: isLight ? '#fee2e2' : 'rgba(220, 38, 38, 0.1)', 
-            text: isLight ? '#7f1d1d' : '#f87171', 
+            bg: isLight ? '#fee2e2' : 'rgba(239, 68, 68, 0.08)', 
+            text: isLight ? '#7f1d1d' : '#fca5a5', 
             border: isLight ? '#fecaca' : 'rgba(239, 68, 68, 0.2)', 
-            icon: isLight ? '#b91c1c' : '#f87171', 
+            icon: isLight ? '#b91c1c' : '#fca5a5', 
             badgeBg: isLight ? '#fecaca' : 'rgba(239, 68, 68, 0.2)', 
-            badgeText: isLight ? '#991b1b' : '#f87171' 
+            badgeText: isLight ? '#991b1b' : '#fca5a5' 
         },
       },
     },
@@ -112,12 +112,12 @@ const getTheme = (mode) => {
       },
       MuiDialog: {
         styleOverrides: {
-          paper: { borderRadius: '24px', padding: '8px' },
+          paper: { borderRadius: '24px', padding: '8px', backgroundImage: 'none' },
         },
       },
       MuiDrawer: {
         styleOverrides: {
-          paper: { borderRadius: 0, boxShadow: 'none' },
+          paper: { borderRadius: 0, boxShadow: 'none', backgroundImage: 'none' },
         },
       },
       MuiAppBar: {
@@ -152,7 +152,7 @@ const getTheme = (mode) => {
         styleOverrides: {
           root: {
             borderRadius: '24px', 
-            boxShadow: isLight ? '0 4px 6px -1px rgb(0 0 0 / 0.1)' : '0 4px 6px -1px rgb(0 0 0 / 0.5)', 
+            boxShadow: isLight ? '0 4px 6px -1px rgb(0 0 0 / 0.1)' : '0 4px 20px -5px rgb(0 0 0 / 0.7)', 
             backgroundImage: 'none',
           },
         },
@@ -162,7 +162,7 @@ const getTheme = (mode) => {
         styleOverrides: {
           root: {
             borderRadius: '24px',
-            boxShadow: isLight ? '0 4px 6px -1px rgb(0 0 0 / 0.1)' : '0 4px 6px -1px rgb(0 0 0 / 0.5)',
+            boxShadow: isLight ? '0 4px 6px -1px rgb(0 0 0 / 0.1)' : '0 4px 20px -5px rgb(0 0 0 / 0.7)',
             backgroundImage: 'none',
           },
         },

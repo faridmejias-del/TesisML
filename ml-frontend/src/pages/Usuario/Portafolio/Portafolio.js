@@ -4,8 +4,8 @@ import { Box, Paper, Grid, CircularProgress } from '@mui/material';
 import { useAuth } from '../../../context'; // Ajustar ruta
 import { usePortafolio } from '../../../features/portafolio/hooks/usePortafolio';
 import ListaPortafolio from '../../../features/portafolio/components/ListaPortafolio';
-import ShowChartIcon from '@mui/icons-material/ShowChart';
 import PageHeader from '../../../components/PageHeader';
+import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 
 export default function Portafolio() {
   const { usuario } = useAuth();
@@ -34,7 +34,7 @@ export default function Portafolio() {
 
       <PageHeader 
         titulo="Gestionar Mi Portafolio"
-        icono={ShowChartIcon} 
+        icono={AccountBalanceWalletIcon} 
       />
 
       <Grid container spacing={{ xs: 2, md: 3, lg: 4 }} alignItems="stretch">

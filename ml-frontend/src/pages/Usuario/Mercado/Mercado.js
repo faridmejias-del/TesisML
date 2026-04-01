@@ -1,7 +1,7 @@
 // src/pages/Usuario/Mercado/Mercado.js
 import React, { useState, useCallback, useTransition } from 'react';
 import { Box, Typography, Paper, Grid, Alert, CircularProgress } from '@mui/material'; 
-import ShowChartIcon from '@mui/icons-material/ShowChart';
+import AnalyticsIcon from '@mui/icons-material/Analytics';
 
 // Importaciones de features refactorizadas
 import { useEmpresas } from '../../../features/empresas/hooks/useEmpresas';
@@ -32,7 +32,7 @@ export default function Mercado() {
         <PageHeader 
             titulo="Laboratorio de Mercado"
             subtitulo="Explora el directorio global, analiza el historial de precios y revisa las predicciones de la Inteligencia Artificial."
-            icono={ShowChartIcon} 
+            icono={AnalyticsIcon} 
         />
 
       {!empresaSeleccionada.id && (

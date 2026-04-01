@@ -47,7 +47,10 @@ function AuthForm({ modoInicialRegistro = false }) {
     };
 
     const handleSubmit = async (e) => {
-        e.preventDefault();
+        if (e && e.preventDefault) {
+            e.preventDefault();
+        }
+
         setCargando(true);
         
         let result;
@@ -58,49 +61,33 @@ function AuthForm({ modoInicialRegistro = false }) {
         }
         
         if (!result.success) {
-            // USAMOS TOAST PARA EL ERROR
             toast.error(result.message, {
                 duration: 4000,
-                style: {
-                    borderRadius: '10px',
-                    background: '#333',
-                    color: '#fff',
-                },
+                style: { borderRadius: '10px', background: '#333', color: '#fff' },
             });
             setCargando(false);
         } else {
-            // MENSAJE DE ÉXITO
             toast.success(esRegistro ? '¡Registro exitoso!' : '¡Bienvenido!');
-            // No quitamos el 'cargando' aquí porque el Landing.js redirigirá pronto
         }
     };
 
     return (
-        <Box 
-            component="form" 
-            onSubmit={handleSubmit} 
-            sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, width: '100%', mt: 1 }}
-        >
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, width: '100%', mt: 1 }}>
             <Typography variant="h5" align="center" fontWeight="900" color="text.primary">
                 {esRegistro ? 'Crear una Cuenta' : '¡Hola de nuevo!'}
             </Typography>
 
             {esRegistro && (
                 <Box sx={{ display: 'flex', gap: 2 }}>
+                    {/* Quitamos los autoFocus innecesarios que en móvil abren el teclado de golpe */}
                     <TextField 
                         label="Nombre" required 
                         value={nombre} onChange={(e) => setNombre(e.target.value)}
-                        autoFocus
-                        InputProps={{
-                            startAdornment: (
-                                <InputAdornment position="start"><PersonIcon color="action" fontSize="small" /></InputAdornment>
-                            ),
-                        }}
+                        InputProps={{ startAdornment: (<InputAdornment position="start"><PersonIcon color="action" fontSize="small" /></InputAdornment>) }}
                     />
                     <TextField 
                         label="Apellido" required 
                         value={apellido} onChange={(e) => setApellido(e.target.value)}
-                        autoFocus
                     />
                 </Box>
             )}
@@ -108,25 +95,19 @@ function AuthForm({ modoInicialRegistro = false }) {
             <TextField 
                 label="Correo Electrónico" type="email" required 
                 value={email} onChange={(e) => setEmail(e.target.value)} 
-                autoFocus
-                InputProps={{
-                    startAdornment: (<InputAdornment position="start"><EmailIcon color="action" /></InputAdornment>),
-                }}
+                InputProps={{ startAdornment: (<InputAdornment position="start"><EmailIcon color="action" /></InputAdornment>) }}
             />
             
             <TextField 
                 label="Contraseña" type="password" required 
                 value={password} onChange={(e) => setPassword(e.target.value)} 
-                autoFocus
-                InputProps={{
-                    startAdornment: (<InputAdornment position="start"><LockIcon color="action" /></InputAdornment>),
-                }}
+                InputProps={{ startAdornment: (<InputAdornment position="start"><LockIcon color="action" /></InputAdornment>) }}
             />
 
-            {/* HEMOS ELIMINADO EL TYPOGRAPHY DE ERROR YA QUE AHORA USAMOS TOASTS */}
-
             <Button 
-                type="submit" variant="contained" color="primary" size="large" fullWidth disabled={cargando}
+                // 3. MODIFICACIÓN CLAVE: Quitamos type="submit" y le pasamos el onClick directamente
+                onClick={handleSubmit} 
+                variant="contained" color="primary" size="large" fullWidth disabled={cargando}
                 sx={{ mt: 1, boxShadow: 3 }}
             >
                 {cargando ? <CircularProgress size={24} color="inherit" /> : (esRegistro ? 'Registrarse' : 'Ingresar al sistema')}

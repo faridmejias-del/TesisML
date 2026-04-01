@@ -1,5 +1,5 @@
 // src/features/dashboard/hooks/useDashboard.js
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { portafolioService, empresaService } from '../../../services';
 import resultadoService from '../../../services/resultadoService';
@@ -14,104 +14,98 @@ export const useDashboard = (usuario) => {
         distribucionSectores: []
     });
 
-    useEffect(() => {
-        const cargarDashboard = async () => {
-            try {
-                setCargando(true);
+    // NUEVO: Separamos en useCallback para permitir "Pull to Refresh"
+    const cargarDashboard = useCallback(async () => {
+        if (!usuario?.id) return;
+
+        try {
+            setCargando(true);
+            
+            // 🔥 MEJORA MÓVIL: Promise.all dispara las 3 peticiones al mismo tiempo
+            // Esto reduce el tiempo de espera a lo que tarde la petición más lenta, no a la suma de las tres.
+            const [dataEmpresas, todosLosPortafolios, resultadosIA] = await Promise.all([
+                empresaService.obtenerEmpresasConSectores(),
+                portafolioService.obtenerTodos(),
+                resultadoService.obtenerUltimosResultados()
+            ]);
+            
+            const misConexiones = todosLosPortafolios.filter(p => p.IdUsuario === usuario.id && p.Activo !== false);
+
+            const misEmpresasCompletas = misConexiones.map(conexion => {
+                return dataEmpresas.empresas.find(e => e.IdEmpresa === conexion.IdEmpresa);
+            }).filter(e => e !== undefined);
+
+            // 1. Distribución de Sectores
+            const conteoSectores = {};
+            misEmpresasCompletas.forEach(emp => {
+                conteoSectores[emp.NombreSector] = (conteoSectores[emp.NombreSector] || 0) + 1;
+            });
+            
+            const distribucion = Object.keys(conteoSectores).map(sector => ({
+                nombre: sector,
+                cantidad: conteoSectores[sector]
+            })).sort((a, b) => b.cantidad - a.cantidad);
+
+            // 2. OBTENER RESULTADOS REALES (Usando resultadosIA descargado en paralelo)
+            const prediccionesReales = misEmpresasCompletas.map(emp => {
+                const resultado = resultadosIA.find(r => r.IdEmpresa === emp.IdEmpresa);
                 
-                const dataEmpresas = await empresaService.obtenerEmpresasConSectores();
-                const todosLosPortafolios = await portafolioService.obtenerTodos();
-                
-                const misConexiones = todosLosPortafolios.filter(p => p.IdUsuario === usuario.id && p.Activo !== false);
+                let score = 0, tendencia = 'Neutral', precioActual = 0, precioPredicho = 0, rsi = 0;
 
-                const misEmpresasCompletas = misConexiones.map(conexion => {
-                    return dataEmpresas.empresas.find(e => e.IdEmpresa === conexion.IdEmpresa);
-                }).filter(e => e !== undefined);
-
-                // 1. Distribución de Sectores
-                const conteoSectores = {};
-                misEmpresasCompletas.forEach(emp => {
-                    conteoSectores[emp.NombreSector] = (conteoSectores[emp.NombreSector] || 0) + 1;
-                });
-                
-                const distribucion = Object.keys(conteoSectores).map(sector => ({
-                    nombre: sector,
-                    cantidad: conteoSectores[sector]
-                })).sort((a, b) => b.cantidad - a.cantidad);
-
-                // 2. OBTENER RESULTADOS REALES
-                const resultadosIA = await resultadoService.obtenerUltimosResultados();
-
-                const prediccionesReales = misEmpresasCompletas.map(emp => {
-                    const resultado = resultadosIA.find(r => r.IdEmpresa === emp.IdEmpresa);
+                if (resultado) {
+                    score = parseFloat(resultado.Score) || 0;
+                    precioActual = parseFloat(resultado.PrecioActual) || 0;
+                    precioPredicho = parseFloat(resultado.PrediccionIA) || 0;
+                    rsi = parseFloat(resultado.RSI) || 0;
                     
-                    let score = 0;
-                    let tendencia = 'Neutral';
-                    let precioActual = 0;
-                    let precioPredicho = 0;
-                    let rsi = 0;
-
-                    if (resultado) {
-                        score = parseFloat(resultado.Score) || 0;
-                        precioActual = parseFloat(resultado.PrecioActual) || 0;
-                        precioPredicho = parseFloat(resultado.PrediccionIA) || 0;
-                        rsi = parseFloat(resultado.RSI) || 0;
-                        
-                        // Mapear los estados de tu BD a la UI
-                        if (resultado.Recomendacion === 'ALCISTA') tendencia = 'Alcista';
-                        else if (resultado.Recomendacion === 'BAJISTA') tendencia = 'Bajista';
-                        else tendencia = 'Neutral'; // Para "MANTENER" o nulos
-                    }
-
-                    return {
-                        ...emp,
-                        score,
-                        tendencia,
-                        precioActual,
-                        precioPredicho,
-                        rsi,
-                        analizado: !!resultado // Bandera para saber si la IA ya la procesó
-                    };
-                });
-
-                // Ordenamos por mejor score para mostrar el Top
-                const topIA = prediccionesReales
-                    .filter(emp => emp.analizado) // Solo mostramos las que tienen análisis
-                    .sort((a, b) => b.score - a.score)
-                    .slice(0, 5);
-
-                // 3. Sentimiento General (Basado en la escala de -1, 0, 1, 2)
-                let sentimiento = 'Neutral';
-                const analizadas = prediccionesReales.filter(emp => emp.analizado);
-                
-                if (analizadas.length > 0) {
-                    const promedioScore = analizadas.reduce((acc, curr) => acc + curr.score, 0) / analizadas.length;
-                    
-                    if (promedioScore >= 1.5) sentimiento = 'Fuerte Alcista';
-                    else if (promedioScore >= 0.5) sentimiento = 'Alcista';
-                    else if (promedioScore <= -0.5) sentimiento = 'Bajista';
+                    if (resultado.Recomendacion === 'ALCISTA') tendencia = 'Alcista';
+                    else if (resultado.Recomendacion === 'BAJISTA') tendencia = 'Bajista';
                 }
 
-                setEstadisticas({
-                    totalEmpresas: misConexiones.length,
-                    totalSectores: Object.keys(conteoSectores).length,
-                    topPredicciones: topIA,
-                    sentimientoGeneral: sentimiento,
-                    distribucionSectores: distribucion
-                });
+                return {
+                    ...emp, score, tendencia, precioActual, precioPredicho, rsi,
+                    analizado: !!resultado 
+                };
+            });
 
-            } catch (error) {
-                console.error("Error cargando dashboard:", error);
-                toast.error("No se pudieron cargar tus estadísticas");
-            } finally {
-                setCargando(false);
+            const topIA = prediccionesReales
+                .filter(emp => emp.analizado) 
+                .sort((a, b) => b.score - a.score)
+                .slice(0, 5);
+
+            // 3. Sentimiento General
+            let sentimiento = 'Neutral';
+            const analizadas = prediccionesReales.filter(emp => emp.analizado);
+            
+            if (analizadas.length > 0) {
+                const promedioScore = analizadas.reduce((acc, curr) => acc + curr.score, 0) / analizadas.length;
+                
+                if (promedioScore >= 1.5) sentimiento = 'Fuerte Alcista';
+                else if (promedioScore >= 0.5) sentimiento = 'Alcista';
+                else if (promedioScore <= -0.5) sentimiento = 'Bajista';
             }
-        };
 
-        if (usuario?.id) {
-            cargarDashboard();
+            setEstadisticas({
+                totalEmpresas: misConexiones.length,
+                totalSectores: Object.keys(conteoSectores).length,
+                topPredicciones: topIA,
+                sentimientoGeneral: sentimiento,
+                distribucionSectores: distribucion
+            });
+
+        } catch (error) {
+            console.error("Error cargando dashboard:", error);
+            // Mensaje ajustado pensando en que las redes móviles fallan más
+            toast.error("Error de conexión. Verifica tu internet y reintenta."); 
+        } finally {
+            setCargando(false);
         }
-    }, [usuario]);
+    }, [usuario?.id]); // Solo se recrea si cambia el ID del usuario
 
-    return { cargando, estadisticas };
+    useEffect(() => {
+        cargarDashboard();
+    }, [cargarDashboard]);
+
+    // NUEVO: Exportamos 'recargar' 
+    return { cargando, estadisticas, recargar: cargarDashboard };
 };

@@ -1,34 +1,37 @@
 // src/features/portafolio/hooks/usePrediccionesIA.js
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import resultadoService from '../../../services/resultadoService';
 
-// Le quitamos el parámetro 'habilitado', ahora siempre consulta a la IA
 export const usePrediccionesIA = () => {
     const [predicciones, setPredicciones] = useState({});
     const [cargandoIA, setCargandoIA] = useState(false);
+    const [error, setError] = useState(null); // NUEVO: Manejo de red
+
+    // NUEVO: Separamos la lógica en una función recargable
+    const cargarIA = useCallback(async () => {
+        try {
+            setCargandoIA(true);
+            setError(null);
+            const data = await resultadoService.obtenerUltimosResultados();
+            
+            const diccionario = {};
+            data.forEach(resultado => { 
+                diccionario[resultado.IdEmpresa] = resultado; 
+            });
+            
+            setPredicciones(diccionario);
+        } catch (err) {
+            console.error("Error al cargar predicciones de IA:", err);
+            setError(err); // Guardamos el error por si la UI quiere mostrar un botón de "Reintentar"
+        } finally {
+            setCargandoIA(false);
+        }
+    }, []);
 
     useEffect(() => {
-        const cargarIA = async () => {
-            try {
-                setCargandoIA(true);
-                const data = await resultadoService.obtenerUltimosResultados();
-                
-                // Diccionario para búsqueda instantánea
-                const diccionario = {};
-                data.forEach(resultado => { 
-                    diccionario[resultado.IdEmpresa] = resultado; 
-                });
-                
-                setPredicciones(diccionario);
-            } catch (error) {
-                console.error("Error al cargar predicciones de IA:", error);
-            } finally {
-                setCargandoIA(false);
-            }
-        };
-
         cargarIA();
-    }, []); // Se ejecuta 1 sola vez al montar
+    }, [cargarIA]); 
 
-    return { predicciones, cargandoIA };
+    // NUEVO: Exportamos 'refetch' para poder recargar manualmente
+    return { predicciones, cargandoIA, error, refetch: cargarIA };
 };

@@ -127,7 +127,7 @@ export default function ListaPortafolio({
 
       <Divider sx={{ mb: 2 }} />
       
-      <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', minHeight: '380px' }}>
+      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
           {empresasFiltradas.length > 0 && (
               <Box sx={{ display: 'flex', alignItems: 'center', px: 1, py: 0.5, bgcolor: 'rgba(0,0,0,0.02)', borderRadius: 1, mb: 2 }}>
                   <Checkbox size="small" color={colorTema} checked={todasSeleccionadas} indeterminate={algunasSeleccionadas} onChange={alternarTodas}/>
@@ -190,7 +190,7 @@ export default function ListaPortafolio({
                               </IconButton>
                           </Box>
 
-                          <Box sx={{ flexGrow: 1, mb: 1, minWidth: 0 }}>
+                          <Box sx={{ flex: 1, mb: 1, overflow: 'hidden' }}>
                               <Typography variant="h6" fontWeight="900" noWrap sx={{ lineHeight: 1.2, fontSize: { xs: '1.1rem', sm: '1rem', md: '1.15rem' } }}>
                                   {emp.Ticket}
                               </Typography>

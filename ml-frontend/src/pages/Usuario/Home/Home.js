@@ -35,13 +35,13 @@ export default function Home() {
   const { cargando, estadisticas } = useDashboard(usuario);
   const theme = useTheme();
 
-  if (cargando) {
-      return (
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
+    if (cargando) {
+        return (
+        <Box sx={{ display: 'flex', flex: 1, minHeight: 300, justifyContent: 'center', alignItems: 'center' }}>
             <CircularProgress />
         </Box>
-      );
-  }
+        );
+    }
 
   const obtenerColorSentimiento = (sentimiento) => {
       if (sentimiento?.includes('Alcista')) return { color: theme.palette.market.positive.icon, bg: theme.palette.market.positive.bg }; 
@@ -141,7 +141,10 @@ export default function Home() {
                                     mb: 1.5, 
                                     borderRadius: 2, 
                                     p: 2, 
-                                    borderLeft: `4px solid ${emp.tendencia === 'Alcista' ? theme.palette.market.positive.icon : emp.tendencia === 'Bajista' ? theme.palette.market.negative.icon : theme.palette.warning.main}` 
+                                    // Estructura más clara para futura migración a RN
+                                    borderLeftWidth: 4,
+                                    borderLeftStyle: 'solid',
+                                    borderLeftColor: emp.tendencia === 'Alcista' ? theme.palette.market.positive.icon : emp.tendencia === 'Bajista' ? theme.palette.market.negative.icon : theme.palette.warning.main
                                 }}
                             >
                                 <ListItemAvatar>

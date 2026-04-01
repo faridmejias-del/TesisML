@@ -6,9 +6,16 @@ import { useEmpresaForm } from '../hooks/useEmpresaForm';
 export default function EmpresaForm({ empresaInicial, onSave, onCancel }) {
   const { sectores, register, errors, onSubmit } = useEmpresaForm(empresaInicial, onSave);
 
+  const manejarEnvio = (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    // Ejecutamos la función de validación de react-hook-form
+    onSubmit(); 
+  };
+
   return (
     <Paper elevation={0} sx={{ p: 3, backgroundColor: 'background.default', borderRadius: '12px' }}>
-      <Box component="form" onSubmit={onSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+      {/* QUITAMOS component="form" y onSubmit de aquí */}
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
         <Typography variant="h6" fontWeight="bold" color="text.primary">
           {empresaInicial ? 'Editar' : 'Nueva'} Empresa
         </Typography>
@@ -47,18 +54,13 @@ export default function EmpresaForm({ empresaInicial, onSave, onCancel }) {
         />
 
         <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', mt: 1 }}>
-          {/* Usamos colores estándar del sistema (grey) para cancelar */}
-          <Button 
-            variant="contained" 
-            onClick={onCancel} 
-            disableElevation 
-          >
+          <Button variant="contained" onClick={onCancel} disableElevation>
             Cancelar
           </Button>
 
-          {/* Pasando color="primary", Material-UI aplica tu verde esmeralda configurado en theme.js */}
           <Button 
-            type="submit" 
+            // ASIGNAMOS el evento onClick al botón de guardado
+            onClick={manejarEnvio} 
             variant="contained" 
             color="primary"
             disableElevation 

@@ -81,18 +81,17 @@ function EmpresaTable({
                     gap: 1.5, 
                     mb: 2, 
                     pb: 1.5, 
-                    borderBottom: '1px solid', // <-- CORRECCIÓN BORDES
-                    borderColor: 'divider'     // <-- SE ADAPTA AL MODO OSCURO
+                    borderBottom: '1px solid',
+                    borderColor: 'divider'
                 }}
             >
-                {/* BOTÓN IZQUIERDO CORREGIDO */}
                 <IconButton 
                     onClick={() => desplazar('izq')} 
                     size="small" 
                     sx={{ 
                         border: '1px solid', 
                         borderColor: 'divider', 
-                        bgcolor: 'background.paper', // <-- EN VEZ DE #fff
+                        bgcolor: 'background.paper',
                         boxShadow: 1,
                         '&:hover': { bgcolor: 'action.hover' }
                     }}
@@ -107,7 +106,6 @@ function EmpresaTable({
                         scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } 
                     }}
                 >
-                    {/* CHIPS SIMPLIFICADOS PARA EVITAR FALLOS DE TEMA */}
                     <Chip
                         label="Todos los sectores"
                         onClick={() => setSectorSeleccionado('todos')}
@@ -127,14 +125,13 @@ function EmpresaTable({
                     ))}
                 </Box>
 
-                {/* BOTÓN DERECHO CORREGIDO */}
                 <IconButton 
                     onClick={() => desplazar('der')} 
                     size="small" 
                     sx={{ 
                         border: '1px solid', 
                         borderColor: 'divider', 
-                        bgcolor: 'background.paper', // <-- EN VEZ DE #fff
+                        bgcolor: 'background.paper',
                         boxShadow: 1,
                         '&:hover': { bgcolor: 'action.hover' }
                     }}
@@ -162,23 +159,21 @@ function EmpresaTable({
                                     onClick={() => onSelect(emp.IdEmpresa, emp.NombreEmpresa)}
                                     sx={{ cursor: 'pointer' }}
                                 >
-                                    {/* FIX: Se añade wordBreak: 'break-all' para que tickers largos bajen a la siguiente línea en lugar de invadir */}
                                     <TableCell sx={{ 
                                         fontWeight: '800', 
                                         color: 'primary.main', 
                                         px: { xs: 1, sm: 2 }, 
                                         fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                                        wordBreak: 'break-all' // <-- SOLUCIÓN AQUÍ
+                                        wordBreak: 'break-all'
                                     }}>
                                         {emp.Ticket}
                                     </TableCell>
                                     
-                                    {/* FIX: Se cambia wordWrap por wordBreak: 'break-word' para asegurar que los nombres largos también se comporten bien */}
                                     <TableCell sx={{ 
                                         color: 'text.secondary', 
                                         px: { xs: 1, sm: 2 }, 
                                         fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                                        wordBreak: 'break-word' // <-- SOLUCIÓN AQUÍ
+                                        wordBreak: 'break-word'
                                     }}>
                                         {emp.NombreEmpresa}
                                     </TableCell>

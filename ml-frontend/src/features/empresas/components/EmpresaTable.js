@@ -143,14 +143,14 @@ function EmpresaTable({
                 </IconButton>
             </Box>
 
-            <TableContainer>
-                <Table size="medium">
+            <TableContainer sx={{ width: '100%', overflowX: 'hidden' }}>
+                <Table size="medium" sx={{ width: '100%', tableLayout: 'fixed' }}> 
                     <TableHead>
                         <TableRow>
-                            <TableCell sx={{ width: esAdmin ? '20%' : '30%' }}>TICKER</TableCell>
-                            <TableCell sx={{ width: esAdmin ? '35%' : '40%' }}>NOMBRE DE EMPRESA</TableCell>
-                            <TableCell sx={{ width: esAdmin ? '25%' : '30%' }}>SECTOR</TableCell>
-                            {esAdmin && <TableCell align="center" sx={{ width: '20%' }}>ACCIONES</TableCell>}
+                            <TableCell sx={{ width: esAdmin ? '20%' : '25%', px: { xs: 1, sm: 2 }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>TICKER</TableCell>
+                            <TableCell sx={{ width: esAdmin ? '40%' : '45%', px: { xs: 1, sm: 2 }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>NOMBRE</TableCell>
+                            <TableCell sx={{ width: esAdmin ? '20%' : '30%', px: { xs: 1, sm: 2 }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>SECTOR</TableCell>
+                            {esAdmin && <TableCell align="center" sx={{ width: '20%', px: { xs: 0.5, sm: 2 }, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>ACCIONES</TableCell>}
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -162,33 +162,57 @@ function EmpresaTable({
                                     onClick={() => onSelect(emp.IdEmpresa, emp.NombreEmpresa)}
                                     sx={{ cursor: 'pointer' }}
                                 >
-                                    <TableCell sx={{ fontWeight: '800', color: 'primary.main' }}>{emp.Ticket}</TableCell>
-                                    <TableCell sx={{ color: 'text.secondary' }}>{emp.NombreEmpresa}</TableCell>
-                                    <TableCell>
+                                    {/* FIX: Se añade wordBreak: 'break-all' para que tickers largos bajen a la siguiente línea en lugar de invadir */}
+                                    <TableCell sx={{ 
+                                        fontWeight: '800', 
+                                        color: 'primary.main', 
+                                        px: { xs: 1, sm: 2 }, 
+                                        fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                                        wordBreak: 'break-all' // <-- SOLUCIÓN AQUÍ
+                                    }}>
+                                        {emp.Ticket}
+                                    </TableCell>
+                                    
+                                    {/* FIX: Se cambia wordWrap por wordBreak: 'break-word' para asegurar que los nombres largos también se comporten bien */}
+                                    <TableCell sx={{ 
+                                        color: 'text.secondary', 
+                                        px: { xs: 1, sm: 2 }, 
+                                        fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                                        wordBreak: 'break-word' // <-- SOLUCIÓN AQUÍ
+                                    }}>
+                                        {emp.NombreEmpresa}
+                                    </TableCell>
+
+                                    <TableCell sx={{ px: { xs: 1, sm: 2 } }}>
                                         <Chip 
                                             label={emp.NombreSector} 
                                             size="small" 
                                             variant="outlined"
-                                            sx={{ fontWeight: 'bold', fontSize: '0.75rem', borderColor: 'transparent', bgcolor: 'action.hover' }} 
+                                            sx={{ 
+                                                fontWeight: 'bold', 
+                                                fontSize: { xs: '0.7rem', sm: '0.75rem' }, 
+                                                borderColor: 'transparent', 
+                                                bgcolor: 'action.hover',
+                                                height: 'auto', 
+                                                py: 0.5,
+                                                '& .MuiChip-label': {
+                                                    whiteSpace: 'normal', 
+                                                    display: 'block',
+                                                    textAlign: 'center',
+                                                    px: 1 
+                                                }
+                                            }} 
                                         />
                                     </TableCell>
                                     {esAdmin && (
-                                        <TableCell align="center">
+                                        <TableCell align="center" sx={{ px: { xs: 0, sm: 2 } }}>
                                             <Tooltip title="Editar">
-                                                <IconButton 
-                                                    onClick={(e) => { e.stopPropagation(); onEdit(emp); }} 
-                                                    size="small"
-                                                    color="primary"
-                                                >
+                                                <IconButton onClick={(e) => { e.stopPropagation(); onEdit(emp); }} size="small" color="primary">
                                                     <Edit fontSize="small" />
                                                 </IconButton>
                                             </Tooltip>
                                             <Tooltip title="Eliminar">
-                                                <IconButton 
-                                                    onClick={(e) => { e.stopPropagation(); onDelete(emp.IdEmpresa); }} 
-                                                    size="small"
-                                                    color="error"
-                                                >
+                                                <IconButton onClick={(e) => { e.stopPropagation(); onDelete(emp.IdEmpresa); }} size="small" color="error">
                                                     <Delete fontSize="small" />
                                                 </IconButton>
                                             </Tooltip>

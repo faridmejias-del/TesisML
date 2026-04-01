@@ -36,6 +36,7 @@ export default function AdminLayout() {
       <Typography 
         variant="h6" 
         sx={{ 
+          display: { xs: 'none', lg: 'block' },
           p: 2.5, 
           textAlign: 'center', 
           borderBottom: '1px solid',
@@ -102,7 +103,7 @@ export default function AdminLayout() {
     <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
       
       {/* APPBAR SIMPLIFICADO */}
-      <AppBar position="fixed" sx={{ display: { lg: 'none' }, bgcolor: 'layout.sidebar', width: '100%' }}>
+      <AppBar position="fixed" sx={{ display: { lg: 'none' }, bgcolor: 'layout.sidebar', color: 'layout.sidebarText', width: '100%' }}>
         <Toolbar>
           <IconButton color="inherit" edge="start" onClick={handleDrawerToggle} sx={{ mr: 2 }}><MenuIcon /></IconButton>
           {/* USAMOS LA VARIABLE AQUÍ */}

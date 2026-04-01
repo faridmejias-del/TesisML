@@ -53,8 +53,19 @@ const VistaProyecciones = () => {
         />
 
         {/* CONTROLES: Filtro por Sector */}
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <FormControl sx={{ minWidth: 250 }} size="small">
+        <Box sx={{ 
+            display: 'flex', 
+            // En móvil se centra (o se estira), en PC se va a la derecha
+            justifyContent: { xs: 'center', sm: 'flex-end' }, 
+            width: '100%' 
+        }}>
+            <FormControl 
+                sx={{ 
+                    // En móvil ocupa el 100% del ancho, en PC un mínimo de 250px
+                    width: { xs: '100%', sm: 250 } 
+                }} 
+                size="small"
+            >
                 <InputLabel id="filtro-sector-label">Filtrar por Sector</InputLabel>
                 <Select
                     labelId="filtro-sector-label"
@@ -72,17 +83,42 @@ const VistaProyecciones = () => {
 
         {/* GRÁFICO COMPARATIVO: Se muestra solo si hay 2 o más empresas seleccionadas */}
         {empresasComparar.length >= 2 && (
-            <Paper sx={{ p: 4, border: '1px solid #e2e8f0' }}>
-                <Typography variant="h6" fontWeight="bold" gutterBottom color="primary.main">
+            <Paper sx={{ 
+                p: { xs: 2, sm: 4 }, // FIX: Padding reducido en móvil para dar espacio al gráfico
+                border: '1px solid', 
+                borderColor: 'divider' // FIX: Se adapta automáticamente al modo claro/oscuro
+            }}>
+                <Typography 
+                    variant="h6" 
+                    fontWeight="bold" 
+                    gutterBottom 
+                    color="primary.main"
+                    sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }} // FIX: Texto un poco más pequeño en móvil
+                >
                     Comparativa de Proyecciones ({empresasComparar.join(' vs ')})
                 </Typography>
-                <GraficoComparativo datos={datosAComparar} />
+                
+                {/* Contenedor extra por seguridad, ayuda a que el gráfico no desborde si falla el ResponsiveContainer */}
+                <Box sx={{ width: '100%', overflowX: 'hidden' }}>
+                    <GraficoComparativo datos={datosAComparar} />
+                </Box>
             </Paper>
         )}
       
         {proyecciones.length === 0 && !cargando && (
-            <Box sx={{ textAlign: 'center', p: 5, bgcolor: 'background.default', borderRadius: 2 }}>
-                <Typography variant="h6" color="text.secondary">No se encontraron empresas activas en tu portafolio.</Typography>
+            <Box sx={{ 
+                textAlign: 'center', 
+                p: { xs: 3, sm: 5 }, // FIX: Padding adaptativo
+                bgcolor: 'background.default', 
+                borderRadius: 2 
+            }}>
+                <Typography 
+                    variant="h6" 
+                    color="text.secondary"
+                    sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }} // FIX: Evita que el texto gigante rompa la pantalla en celular
+                >
+                    No se encontraron empresas activas en tu portafolio.
+                </Typography>
             </Box>
         )}
 

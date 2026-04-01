@@ -8,13 +8,13 @@ import {
   Box, Typography, Paper, FormControl, InputLabel, Select, MenuItem, 
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Grid, Chip, List, ListItem, ListItemIcon, ListItemText, Divider, CircularProgress, useTheme 
-} from '@mui/material'; // <-- SE AGREGÓ ListItemIcon AQUÍ
+} from '@mui/material';
 
-// Íconos para la explicabilidad
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import TimelineIcon from '@mui/icons-material/Timeline';
 import SpeedIcon from '@mui/icons-material/Speed';
 
+// ... (calcularErrores se mantiene igual)
 const calcularErrores = (datos, keyPrediccion) => {
   const validData = datos.filter(d => d.precioReal && d[keyPrediccion]);
   if (validData.length === 0) return { mae: 0, rmse: 0 };
@@ -31,6 +31,7 @@ const calcularErrores = (datos, keyPrediccion) => {
 };
 
 const ComparadorIA = () => {
+  // ... (Estados y useEffects se mantienen intactos hasta el return)
   const theme = useTheme();
   const [idEmpresa, setIdEmpresa] = useState(''); 
   const [empresas, setEmpresas] = useState([]); 
@@ -93,11 +94,19 @@ const ComparadorIA = () => {
   if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}><CircularProgress /></Box>;
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, sm: 4 } }}>
       
-      <Paper sx={{ p: 3, display: 'flex', alignItems: 'center', gap: 3 }}>
+      {/* FIX: Se apilan los elementos en móvil (flexDirection column) */}
+      <Paper sx={{ 
+          p: { xs: 2, sm: 3 }, 
+          display: 'flex', 
+          flexDirection: { xs: 'column', sm: 'row' }, 
+          alignItems: { xs: 'flex-start', sm: 'center' }, 
+          gap: { xs: 2, sm: 3 } 
+      }}>
         <Typography variant="h6" fontWeight="bold">Analizar Activo:</Typography>
-        <FormControl sx={{ minWidth: 300 }}>
+        {/* FIX: Ancho al 100% en móvil */}
+        <FormControl sx={{ width: { xs: '100%', sm: 300 } }}>
           <InputLabel id="select-empresa-label">Empresa / Ticker</InputLabel>
           <Select
             labelId="select-empresa-label"
@@ -114,63 +123,66 @@ const ComparadorIA = () => {
         </FormControl>
       </Paper>
 
-      <Paper sx={{ p: 4 }}>
+      {/* FIX: Paddings adaptativos para el contenedor del gráfico */}
+      <Paper sx={{ p: { xs: 2, sm: 4 } }}>
         <Typography variant="h5" fontWeight="bold" gutterBottom>Proyección de Precios</Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>Comparativa entre el precio real de cierre y las predicciones de los modelos v1 y v2.</Typography>
         
-        <Box sx={{ width: '100%', height: 450 }}>
+        {/* FIX: Altura menor del gráfico en móvil para que no exija tanto scroll */}
+        <Box sx={{ width: '100%', height: { xs: 350, sm: 450 } }}>
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={datosGrafico}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme.palette.divider} />
-              <XAxis dataKey="fecha" tick={{ fontSize: 12, fill: theme.palette.text.secondary }} />
-              <YAxis domain={['auto', 'auto']} tick={{ fontSize: 12, fill: theme.palette.text.secondary }} />
+              <XAxis dataKey="fecha" tick={{ fontSize: 10, fill: theme.palette.text.secondary }} minTickGap={20} />
+              <YAxis domain={['auto', 'auto']} tick={{ fontSize: 10, fill: theme.palette.text.secondary }} />
               <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: theme.shadows[3] }} />
-              <Legend wrapperStyle={{ paddingTop: '20px' }} />
+              <Legend wrapperStyle={{ paddingTop: '10px', fontSize: '12px' }} />
               
-              <Line type="monotone" dataKey="precioReal" stroke={theme.palette.text.primary} strokeWidth={4} name="Precio Cierre (Real)" dot={false} />
-              <Line type="monotone" dataKey="prediccionM1" stroke={theme.palette.primary.main} name="LSTM Clásico (v1)" strokeWidth={2} dot={false} />
-              <Line type="monotone" dataKey="prediccionM2" stroke={theme.palette.secondary.main} name="LSTM Bidireccional (v2)" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="precioReal" stroke={theme.palette.text.primary} strokeWidth={3} name="Precio Real" dot={false} />
+              <Line type="monotone" dataKey="prediccionM1" stroke={theme.palette.primary.main} name="LSTM (v1)" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="prediccionM2" stroke={theme.palette.secondary.main} name="LSTM Bidir. (v2)" strokeWidth={2} dot={false} />
             </LineChart>
           </ResponsiveContainer>
         </Box>
       </Paper>
 
-      <Grid container spacing={4}>
+      <Grid container spacing={{ xs: 2, sm: 4 }}>
         <Grid size={{ xs: 12, md: 6 }}>
-          <Paper sx={{ p: 3, height: '100%' }}>
-            <Typography variant="h6" fontWeight="bold" gutterBottom>Métricas de Error (Evaluación)</Typography>
+          <Paper sx={{ p: { xs: 2, sm: 3 }, height: '100%' }}>
+            <Typography variant="h6" fontWeight="bold" gutterBottom>Métricas de Error</Typography>
             <TableContainer>
-              <Table>
+              {/* FIX: Tabla "small" en móvil */}
+              <Table size="small">
                 <TableHead>
                   <TableRow>
-                    <TableCell>Modelo</TableCell>
-                    <TableCell align="right">MAE</TableCell>
-                    <TableCell align="right">RMSE</TableCell>
+                    <TableCell sx={{ px: { xs: 1, sm: 2 } }}>Modelo</TableCell>
+                    <TableCell align="right" sx={{ px: { xs: 1, sm: 2 } }}>MAE</TableCell>
+                    <TableCell align="right" sx={{ px: { xs: 1, sm: 2 } }}>RMSE</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   <TableRow>
-                    <TableCell>LSTM Clásico (v1)</TableCell>
-                    <TableCell align="right">{metricas.m1.mae}</TableCell>
-                    <TableCell align="right">{metricas.m1.rmse}</TableCell>
+                    <TableCell sx={{ px: { xs: 1, sm: 2 } }}>LSTM (v1)</TableCell>
+                    <TableCell align="right" sx={{ px: { xs: 1, sm: 2 } }}>{metricas.m1.mae}</TableCell>
+                    <TableCell align="right" sx={{ px: { xs: 1, sm: 2 } }}>{metricas.m1.rmse}</TableCell>
                   </TableRow>
                   <TableRow sx={{ bgcolor: 'market.positive.bg' }}>
-                    <TableCell sx={{ color: 'market.positive.text', fontWeight: 'bold' }}>LSTM Bidireccional (v2)</TableCell>
-                    <TableCell align="right" sx={{ color: 'market.positive.text', fontWeight: 'bold' }}>{metricas.m1.mae}</TableCell>
-                    <TableCell align="right" sx={{ color: 'market.positive.text', fontWeight: 'bold' }}>{metricas.m1.rmse}</TableCell>
+                    <TableCell sx={{ color: 'market.positive.text', fontWeight: 'bold', px: { xs: 1, sm: 2 } }}>LSTM Bidireccional (v2)</TableCell>
+                    <TableCell align="right" sx={{ color: 'market.positive.text', fontWeight: 'bold', px: { xs: 1, sm: 2 } }}>{metricas.m2.mae}</TableCell>
+                    <TableCell align="right" sx={{ color: 'market.positive.text', fontWeight: 'bold', px: { xs: 1, sm: 2 } }}>{metricas.m2.rmse}</TableCell>
                   </TableRow>
                 </TableBody>
               </Table>
             </TableContainer>
             <Typography variant="caption" sx={{ mt: 2, display: 'block', color: 'text.secondary', fontStyle: 'italic' }}>
-              * RMSE penaliza más las desviaciones grandes. Menor valor indica mejor ajuste a la volatilidad.
+              * RMSE penaliza más las desviaciones grandes. Menor valor indica mejor ajuste.
             </Typography>
           </Paper>
         </Grid>
 
         <Grid size={{ xs: 12, md: 6 }}>
-          <Paper sx={{ p: 3, height: '100%' }}>
-            <Typography variant="h6" fontWeight="bold" gutterBottom>Explicabilidad de la IA (Caja Blanca)</Typography>
+          <Paper sx={{ p: { xs: 2, sm: 3 }, height: '100%' }}>
+            <Typography variant="h6" fontWeight="bold" gutterBottom>Explicabilidad de la IA</Typography>
             
             {ultimoAnalisis ? (
               <Box>
@@ -178,7 +190,7 @@ const ComparadorIA = () => {
                   Último análisis: {new Date(ultimoAnalisis.FechaAnalisis).toLocaleString()}
                 </Typography>
                 
-                <Box sx={{ my: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Box sx={{ my: { xs: 2, sm: 3 }, display: 'flex', alignItems: 'center', gap: 2 }}>
                   <Typography variant="subtitle1" fontWeight="bold">Recomendación:</Typography>
                   <Chip 
                     label={ultimoAnalisis.Recomendacion} 
@@ -196,21 +208,21 @@ const ComparadorIA = () => {
 
                 <List size="small" disablePadding>
                   <ListItem disableGutters>
-                    <ListItemIcon><InfoOutlinedIcon color="primary" /></ListItemIcon>
+                    <ListItemIcon sx={{ minWidth: 40 }}><InfoOutlinedIcon color="primary" /></ListItemIcon>
                     <ListItemText 
                       primary={`RSI: ${ultimoAnalisis.RSI ? parseFloat(ultimoAnalisis.RSI).toFixed(2) : 'N/D'}`} 
                       secondary={!ultimoAnalisis.RSI ? "Sin datos." : ultimoAnalisis.RSI < 30 ? "Sobreventa (posible rebote)." : ultimoAnalisis.RSI > 70 ? "Sobrecompra (posible corrección)." : "Zona neutral."} 
                     />
                   </ListItem>
                   <ListItem disableGutters>
-                    <ListItemIcon><TimelineIcon color="primary" /></ListItemIcon>
+                    <ListItemIcon sx={{ minWidth: 40 }}><TimelineIcon color="primary" /></ListItemIcon>
                     <ListItemText 
                       primary={`MACD: ${ultimoAnalisis.MACD ? parseFloat(ultimoAnalisis.MACD).toFixed(2) : 'N/D'}`} 
                       secondary={ultimoAnalisis.MACD < 0 ? "Tendencia bajista." : "Tendencia alcista."} 
                     />
                   </ListItem>
                   <ListItem disableGutters>
-                    <ListItemIcon><SpeedIcon color="primary" /></ListItemIcon>
+                    <ListItemIcon sx={{ minWidth: 40 }}><SpeedIcon color="primary" /></ListItemIcon>
                     <ListItemText 
                       primary={`Volatilidad (ATR): ${ultimoAnalisis.ATR ? parseFloat(ultimoAnalisis.ATR).toFixed(2) : 'N/D'} USD`} 
                       secondary="Promedio de movimiento diario." 

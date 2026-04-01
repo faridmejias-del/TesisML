@@ -26,7 +26,7 @@ const drawerWidth = 250; // ¡Necesitamos esto para saber el ancho del menú!
 export default function UserLayout() {
   const location = useLocation();
   const isActivo = (ruta) => location.pathname.includes(ruta);
-  const { logout } = useAuth();
+  const { logout, usuario } = useAuth();
   const { mode, toggleTheme } = useThemeContext();
   
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -39,6 +39,7 @@ export default function UserLayout() {
       <Typography 
         variant="h6" 
         sx={{ 
+          display: { xs: 'none', lg: 'block' },
           p: 2.5, 
           textAlign: 'center', 
           borderBottom: '1px solid',
@@ -46,7 +47,7 @@ export default function UserLayout() {
           fontWeight: 'bold' 
         }}
       >
-        {APP_NAME}: Usuario
+        {APP_NAME}: {usuario?.nombre ? ` ${usuario.nombre.split(' ')[0]}` : ''} 
       </Typography>
       
       {/* flexGrow: 1 empuja el botón de "Cerrar Sesión" hacia abajo */}
@@ -128,10 +129,12 @@ export default function UserLayout() {
     <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
       
       {/* BARRA SUPERIOR (Solo se ve en móviles) */}
-      <AppBar position="fixed" sx={{ display: { lg: 'none' }, bgcolor: 'layout.sidebar', width: '100%' }}>
+      <AppBar position="fixed" sx={{ display: { lg: 'none' }, bgcolor: 'layout.sidebar', color: 'layout.sidebarText', width: '100%' }}>
         <Toolbar>
           <IconButton color="inherit" edge="start" onClick={handleDrawerToggle} sx={{ mr: 2 }}><MenuIcon /></IconButton>
-          <Typography variant="h6" noWrap component="div" fontWeight="bold">{APP_NAME}</Typography>
+          <Typography variant="h6" noWrap component="div" fontWeight="bold" color="inherit">
+            {APP_NAME}: {usuario?.nombre ? ` ${usuario.nombre.split(' ')[0]}` : ''}
+          </Typography>
         </Toolbar>
       </AppBar>
 

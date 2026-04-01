@@ -1,4 +1,3 @@
-// src/context/ThemeContext.js
 import React, { createContext, useState, useMemo, useEffect, useContext } from 'react';
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import getTheme from '../theme';
@@ -10,9 +9,16 @@ const ThemeContext = createContext();
 export const useThemeContext = () => useContext(ThemeContext);
 
 export const CustomThemeProvider = ({ children }) => {
-    // Inicializamos el estado leyendo el localStorage (por defecto 'light')
+    // Inicializamos el estado con una función lógica
     const [mode, setMode] = useState(() => {
-        return localStorage.getItem('appTheme') || 'light';
+        // 1. Verificamos si ya existe una preferencia guardada manualmente
+        const savedTheme = localStorage.getItem('appTheme');
+        if (savedTheme) return savedTheme;
+
+        // 2. Si no hay nada guardado, detectamos la preferencia del sistema/navegador
+        const prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        
+        return prefersDarkMode ? 'dark' : 'light';
     });
 
     // Cada vez que el modo cambie, lo guardamos en localStorage
@@ -31,7 +37,7 @@ export const CustomThemeProvider = ({ children }) => {
     return (
         <ThemeContext.Provider value={{ mode, toggleTheme }}>
             <ThemeProvider theme={theme}>
-                <CssBaseline /> {/* Mueve el CssBaseline aquí para estandarizar fondos globales */}
+                <CssBaseline /> 
                 {children}
             </ThemeProvider>
         </ThemeContext.Provider>

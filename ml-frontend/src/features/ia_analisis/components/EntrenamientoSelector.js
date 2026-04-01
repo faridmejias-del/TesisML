@@ -20,11 +20,19 @@ export default function EntrenamientoSelector() {
     return (
         <>
             <Box sx={{ 
-                display: 'flex', alignItems: 'center', gap: 2, 
-                bgcolor: 'background.default', p: 2, borderRadius: 3, 
-                border: '1px solid', borderColor: 'divider' 
+                display: 'flex', 
+                flexDirection: { xs: 'column', sm: 'row' }, // <-- FIX: En móvil se apilan, en PC se ponen uno al lado del otro
+                alignItems: 'center', 
+                gap: 2, 
+                bgcolor: 'background.default', 
+                p: 2, 
+                borderRadius: 3, 
+                border: '1px solid', 
+                borderColor: 'divider',
+                width: { xs: '100%', sm: 'auto' } // <-- FIX: Toma todo el ancho disponible en móvil
             }}>
-                <FormControl size="small" sx={{ minWidth: 200 }}>
+                {/* FIX: minWidth cambia a width 100% en móvil */}
+                <FormControl size="small" sx={{ width: { xs: '100%', sm: 200 } }}>
                     <InputLabel id="label-ia-selector">Seleccionar IA</InputLabel>
                     <Select
                         labelId="label-ia-selector"
@@ -41,11 +49,13 @@ export default function EntrenamientoSelector() {
                     </Select>
                 </FormControl>
 
+                {/* FIX: El botón ocupa el 100% del ancho en móvil para ser fácil de tocar */}
                 <Button 
                     variant="contained" 
-                    color="secondary" // Usamos el índigo del tema
+                    color="secondary" 
                     onClick={() => setModalAbierto(true)}
                     disabled={entrenando || modelos.length === 0}
+                    sx={{ width: { xs: '100%', sm: 'auto' } }} 
                 >
                     {entrenando ? '⏳ Entrenando...' : '🧠 Entrenar Seleccionado'}
                 </Button>

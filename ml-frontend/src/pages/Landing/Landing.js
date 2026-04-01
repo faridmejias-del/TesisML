@@ -83,18 +83,49 @@ export default function Landing() {
             <Box component="main" sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', p: { xs: 2, md: 4 }, gap: 6 }}>
                 
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', width: '100%', maxWidth: '1200px', flexWrap: 'wrap', gap: 4, mt: 4 }}>
-                    <Box sx={{ maxWidth: '500px' }}>
-                        <Typography variant="h3" component="h1" sx={{ fontWeight: '900', color: 'text.primary', mb: 2, lineHeight: 1.2 }}>
+                    <Box sx={{ 
+                        maxWidth: '500px',
+                        textAlign: { xs: 'center', sm: 'left' } // FIX: Centrado en móvil, a la izquierda en PC (opcional, suele verse mejor)
+                    }}>
+                        <Typography 
+                            variant="h3" 
+                            component="h1" 
+                            sx={{ 
+                                fontWeight: '900', 
+                                color: 'text.primary', 
+                                mb: 2, 
+                                lineHeight: 1.2,
+                                fontSize: { xs: '2.2rem', sm: '3rem' } // FIX: El título h3 es muy gigante por defecto en móvil, lo achicamos un poco
+                            }}
+                        >
                             Predicción Inteligente del Mercado
                         </Typography>
-                        <Typography variant="h6" sx={{ color: 'text.secondary', mb: 4, lineHeight: 1.6 }}>
+                        <Typography 
+                            variant="h6" 
+                            sx={{ 
+                                color: 'text.secondary', 
+                                mb: { xs: 3, sm: 4 }, 
+                                lineHeight: 1.6,
+                                fontSize: { xs: '1rem', sm: '1.25rem' } // FIX: Subtítulo más legible en móvil
+                            }}
+                        >
                             Plataforma avanzada de análisis financiero impulsada por Machine Learning. 
                             Visualiza tendencias y toma decisiones informadas con modelos predictivos de vanguardia.
                         </Typography>
                         <Button 
-                            variant="contained" color="primary" size="large"
+                            variant="contained" 
+                            color="primary" 
+                            size="large"
                             onClick={() => abrirModalAuth(true)} 
-                            sx={{ boxShadow: 3 }}
+                            sx={{ 
+                                boxShadow: 3,
+                                width: { xs: '100%', sm: 'auto' }, // <-- FIX PRINCIPAL: 100% de ancho en móvil, tamaño automático en PC
+                                py: { xs: 1.5, sm: 1.2 },          // <-- FIX: Un poco más de altura en móvil para que sea fácil de tocar
+                                px: { sm: 4 },                     // <-- FIX: Bordes más anchos en PC para que el botón no se vea "cuadrado"
+                                fontSize: { xs: '1.1rem', sm: '1rem' },
+                                fontWeight: 'bold',
+                                borderRadius: 2
+                            }}
                         >
                             Comenzar ahora
                         </Button>

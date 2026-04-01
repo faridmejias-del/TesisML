@@ -221,6 +221,8 @@ export default function Home() {
                                     paddingAngle={5}
                                     animationBegin={200}
                                     animationDuration={800}
+                                    stroke={theme.palette.background.paper} // <-- FIX: El borde ahora coincide con el color de la tarjeta
+                                    strokeWidth={2}
                                 >
                                     {estadisticas.distribucionSectores.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={COLORES_SECTORES[index % COLORES_SECTORES.length]} />

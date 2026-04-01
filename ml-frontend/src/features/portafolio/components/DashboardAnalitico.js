@@ -66,6 +66,8 @@ const DashboardAnalitico = () => {
                                         innerRadius={60} // Lo hacemos tipo "Donut" para que sea más moderno
                                         outerRadius={80}
                                         paddingAngle={5}
+                                        stroke={theme.palette.background.paper} // <-- FIX: El borde ahora coincide con el color de la tarjeta
+                                        strokeWidth={2}
                                         label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
                                     >
                                         {data.distribucion_sectores.map((entry, index) => (

@@ -1,4 +1,4 @@
-// src/components/LandingNavbar.js
+// src/features/landing/components/LandingNavbar.js
 import React from 'react';
 import { 
     AppBar, Toolbar, Typography, Box, 
@@ -31,7 +31,10 @@ const LandingNavbar = ({ mode, toggleTheme, abrirModalAuth }) => {
                         variant="outlined" 
                         color="primary"
                         onClick={() => abrirModalAuth(false)} 
-                        sx={{ fontWeight: 'bold' }}
+                        sx={{ 
+                            fontWeight: 'bold', 
+                            minWidth: '130px' // <-- Ancho fijo para simetría
+                        }}
                     >
                         Ingresar
                     </Button>
@@ -40,7 +43,11 @@ const LandingNavbar = ({ mode, toggleTheme, abrirModalAuth }) => {
                         variant="contained" 
                         color="primary"
                         onClick={() => abrirModalAuth(true)} 
-                        sx={{ fontWeight: 'bold', display: { xs: 'none', sm: 'flex' } }}
+                        sx={{ 
+                            fontWeight: 'bold', 
+                            display: { xs: 'none', sm: 'flex' }, 
+                            minWidth: '130px' // <-- El mismo ancho fijo
+                        }}
                     >
                         Registrarse
                     </Button>

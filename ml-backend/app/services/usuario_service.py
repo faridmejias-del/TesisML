@@ -8,6 +8,7 @@ from app.utils.security import hash_password, verify_password
 import re
 from app.utils.security import create_access_token
 from datetime import timedelta
+from app.templates import template_verificacion
 
 class UsuarioService: 
     # =========================================================================
@@ -76,39 +77,17 @@ class UsuarioService:
             data={"sub": str(db_usuario.IdUsuario), "type": "email_verification"},
             expires_delta=timedelta(hours=24)
         )
-
+        
         enlace =f"http://localhost:8000/api/v1/auth/verificar-email/{token_verificacion}"
 
         # --- NUEVA PLANTILLA HTML DE BIENVENIDA ---
-        plantilla_bienvenida = f"""
-        <html>
-        <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; margin: 0;">
-            <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-                <div style="text-align: center; border-bottom: 2px solid #1976d2; padding-bottom: 20px;">
-                    <h2 style="color: #1976d2; margin: 0;">¡Bienvenido a TesisML!</h2>
-                </div>
-                <div style="padding: 20px 0;">
-                    <p style="font-size: 16px; color: #333;">Hola <strong>{db_usuario.Nombre} {db_usuario.Apellido}</strong>,</p>
-                    <p style="font-size: 16px; color: #333;">Gracias por registrarte. Para activar tu cuenta y comenzar a usar nuestras herramientas de IA, por favor confirma tu correo:</p>
-                    
-                    <div style="text-align: center; margin: 30px 0;">
-                        <a href="{enlace}" style="background-color: #1976d2; color: #ffffff; padding: 15px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Verificar mi Cuenta</a>
-                    </div>
-                    
-                    <p style="font-size: 14px; color: #666; text-align: center;">Este enlace expira en 24 horas.</p>
-                </div>
-                <div style="font-size: 12px; color: #aaa; text-align: center; border-top: 1px solid #eee; padding-top: 20px;">
-                    Si no creaste esta cuenta, puedes ignorar este mensaje.
-                </div>
-            </div>
-        </body>
-        </html>
-        """
+        html_mensaje = template_verificacion(db_usuario.Nombre, enlace)
+    
         from app.utils.email import enviar_correo
         enviar_correo(
             destino = db_usuario.Email,
             asunto = "Bienvenido a TesisML - Verifica tu cuenta",
-            mensaje= plantilla_bienvenida,
+            mensaje= html_mensaje,
             es_html=True)
 
         return db_usuario

@@ -89,7 +89,6 @@ const Noticias = () => {
             {noticiasFiltradas.map((noticia, index) => (
                 <Grid size={{ xs: 12, sm: 6, md: 4 }} key={`${noticia.id}-${index}`}>
                 <Card 
-                    elevation={3} 
                     sx={{ 
                     height: '100%', 
                     display: 'flex', 

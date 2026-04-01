@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   Container, Typography, Box, Grid, Card, CardMedia, 
   CardContent, CardActions, Button, Chip, CircularProgress, 
-  Alert, FormControl, InputLabel, Select, MenuItem, Paper
+  Alert, FormControl, InputLabel, Select, MenuItem
 } from '@mui/material';
 import NewspaperIcon from '@mui/icons-material/Newspaper';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
@@ -11,6 +11,7 @@ import { useNoticias } from '../../../features/noticias/hooks/useNoticias';
 // 1. IMPORTAMOS TUS HOOKS PARA OBTENER LAS EMPRESAS DEL PORTAFOLIO
 import { usePortafolio } from '../../../features/portafolio/hooks/usePortafolio';
 import { useAuth } from '../../../context/AuthContext';
+import PageHeader from '../../../components/PageHeader';
 
 const Noticias = () => {
   const { usuario } = useAuth();
@@ -47,34 +48,12 @@ const Noticias = () => {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%', maxWidth: '1400px', margin: '0 auto', pb: 4 }}>
-      
-        <Paper elevation={2} sx={{ p: 3, borderRadius: 3, display: 'flex', alignItems: 'center', gap: 3 }}>
-            
-            {/* HEADER */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-            <Box sx={{ 
-                backgroundColor: 'primary.main', 
-                p: 1.5, 
-                borderRadius: 2, 
-                display: 'flex', 
-                color: 'white', 
-                boxShadow: 2 
-            }}>
-                <NewspaperIcon fontSize="large" />
-            </Box>
 
-            <Box>
-                <Typography variant="h4" fontWeight="bold" color="text.primary">
-                Noticias de tu Portafolio
-                </Typography>
-                <Typography variant="body1" color="text.secondary">
-                Las últimas novedades de Wall Street sobre las empresas en las que inviertes.
-                </Typography>
-            </Box>
-            </Box>
-
-            
-        </Paper>
+        <PageHeader 
+            titulo="Noticias de tu Portafolio"
+            subtitulo="Las últimas novedades de Wall Street sobre las empresas en las que inviertes"
+            icono={NewspaperIcon} 
+        />
 
         {/* FILTRO ABAJO */}
         <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>

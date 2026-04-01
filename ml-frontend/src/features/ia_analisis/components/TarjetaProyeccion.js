@@ -51,7 +51,7 @@ const TarjetaProyeccion = ({ datos, seleccionado, onToggle }) => {
             </Box>
 
             <Box sx={{ height: 250, width: '100%' }}>
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minHeight={250}>
                     <LineChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                         <XAxis dataKey="fecha" tick={{ fontSize: 11, fill: '#94a3b8' }} minTickGap={10} />

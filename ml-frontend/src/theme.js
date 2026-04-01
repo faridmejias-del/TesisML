@@ -108,16 +108,27 @@ const theme = createTheme({
     },
 
     // 3. BARRA DE NAVEGACIÓN (AppBar)
+    MuiDrawer: {
+      styleOverrides: {
+        paper: {
+          borderRadius: 0, // <-- REVIERTE EL REDONDEO
+          boxShadow: 'none',
+        },
+      },
+    },
+
+    // 3.2 LA BARRA SUPERIOR (Vuelve a ser recta)
     MuiAppBar: {
       defaultProps: {
         color: 'inherit',
-        elevation: 1,
+        elevation: 0,
       },
       styleOverrides: {
         root: {
-          backgroundColor: '#ffffff', // Fondo blanco limpio
-          borderBottom: '1px solid #e2e8f0', // Línea sutil separadora
-          boxShadow: 'none', // Cambia a 'none' si prefieres la línea en lugar de sombra
+          borderRadius: 0, // <-- REVIERTE EL REDONDEO
+          backgroundColor: '#ffffff',
+          borderBottom: '1px solid #e2e8f0', 
+          boxShadow: 'none', 
         },
       },
     },
@@ -175,6 +186,30 @@ const theme = createTheme({
         },
       },
     },
+    MuiPaper: {
+      defaultProps: {
+        elevation: 0, // Un diseño moderno suele ser más plano, pero si prefieres la sombra pon 2
+      },
+      styleOverrides: {
+        root: {
+          borderRadius: '24px', // Equivale a tu borderRadius: 3
+          // Opcional: una sombra más suave y moderna
+          boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)', 
+        },
+      },
+    },
+    MuiCard: {
+      defaultProps: {
+        elevation: 0,
+      },
+      styleOverrides: {
+        root: {
+          borderRadius: '24px',
+          boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+        },
+      },
+    },
+    
 
   },
 });

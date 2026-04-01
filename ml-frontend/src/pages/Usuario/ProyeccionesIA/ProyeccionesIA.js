@@ -6,6 +6,7 @@ import TarjetaProyeccion from '../../../features/ia_analisis/components/TarjetaP
 import GraficoComparativo from '../../../features/ia_analisis/components/GraficoComparativo';
 import { Box, Typography, Paper, FormControl, InputLabel, Select, MenuItem, CircularProgress} from '@mui/material'; 
 import ShowChartIcon from '@mui/icons-material/ShowChart';
+import PageHeader from '../../../components/PageHeader';
 
 const VistaProyecciones = () => {
   const { usuario } = useAuth(); 
@@ -45,19 +46,11 @@ const VistaProyecciones = () => {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%', maxWidth: '1400px', margin: '0 auto', pb: 4 }}>
 
-        <Paper elevation={2} sx={{ p: 3, borderRadius: 3, display: 'flex', alignItems: 'center', gap: 3 }}>
-            <Box sx={{ backgroundColor: 'primary.main', p: 1.5, borderRadius: 2, display: 'flex', color: 'white', boxShadow: 2 }}>
-            <ShowChartIcon fontSize="large" />
-            </Box>
-            <Box>
-                <Typography variant="h4" fontWeight="bold" color="text.primary">
-                Análisis Predictivo de tu Portafolio
-                </Typography>
-                <Typography variant="body1" color="text.secondary">
-                Explora el directorio global, analiza el historial de precios y revisa las predicciones de la Inteligencia Artificial.
-                </Typography>
-            </Box>
-        </Paper>
+        <PageHeader 
+            titulo="Análisis Predictivo de tu Portafolio"
+            subtitulo="Explora el directorio global, analiza el historial de precios y revisa las predicciones de la Inteligencia Artificial."
+            icono={ShowChartIcon} 
+        />
 
         {/* CONTROLES: Filtro por Sector */}
         <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -79,7 +72,7 @@ const VistaProyecciones = () => {
 
         {/* GRÁFICO COMPARATIVO: Se muestra solo si hay 2 o más empresas seleccionadas */}
         {empresasComparar.length >= 2 && (
-            <Paper elevation={3} sx={{ p: 4, borderRadius: 3, border: '1px solid #e2e8f0' }}>
+            <Paper sx={{ p: 4, border: '1px solid #e2e8f0' }}>
                 <Typography variant="h6" fontWeight="bold" gutterBottom color="primary.main">
                     Comparativa de Proyecciones ({empresasComparar.join(' vs ')})
                 </Typography>
@@ -88,13 +81,13 @@ const VistaProyecciones = () => {
         )}
       
         {proyecciones.length === 0 && !cargando && (
-            <div style={{ textAlign: 'center', padding: '40px', backgroundColor: '#f8fafc', borderRadius: '8px' }}>
-            <p style={{ color: '#64748b', fontSize: '1.1rem' }}>No se encontraron empresas activas en tu portafolio.</p>
-            </div>
+            <Box sx={{ textAlign: 'center', p: 5, bgcolor: 'background.default', borderRadius: 2 }}>
+                <Typography variant="h6" color="text.secondary">No se encontraron empresas activas en tu portafolio.</Typography>
+            </Box>
         )}
 
         {/* LISTADO DE TARJETAS */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 450px), 1fr))', gap: '24px' }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 450px), 1fr))', gap: 3 }}>
             {proyeccionesFiltradas.map((empresaData, index) => (
                 <TarjetaProyeccion 
                     key={index} 
@@ -104,7 +97,7 @@ const VistaProyecciones = () => {
                     onToggle={() => handleToggleComparar(empresaData.simbolo)}
                 />
             ))}
-        </div>
+        </Box>
     </Box>
   );
 };

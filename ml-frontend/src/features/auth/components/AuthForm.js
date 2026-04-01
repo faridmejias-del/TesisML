@@ -114,9 +114,16 @@ function AuthForm({ modoInicialRegistro = false }) {
             {/* --- NUEVO ENLACE DE RECUPERACIÓN DE CONTRASEÑA --- */}
             {!esRegistro && (
                 <Typography variant="body2" align="center" sx={{ mt: 0.5 }}>
-                    <RouterLink to="/olvide-password" style={{ textDecoration: 'none', color: '#1976d2', fontWeight: '500' }}>
+                    <Link 
+                        component={RouterLink} 
+                        to="/olvide-password" 
+                        variant="body2" 
+                        underline="hover"
+                        fontWeight="500"
+                        color="primary"
+                    >
                         ¿Olvidaste tu contraseña?
-                    </RouterLink>
+                    </Link>
                 </Typography>
             )}
             {/* -------------------------------------------------- */}

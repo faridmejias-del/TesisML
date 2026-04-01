@@ -10,17 +10,11 @@ const api = axios.create({
 
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => { // Agregar async aquí
     if (error.response && error.response.status === 401) {
-      // 1. Usamos la abstracción en lugar de localStorage directo
-      storage.eliminarItem('usuario');
-      
-      // 2. ELIMINAMOS el window.location.href. 
-      // En su lugar, podemos disparar un evento global que el Layout o Router escuche
-      // o simplemente dejar que el error se propague para que el Contexto cambie el estado.
+      await storage.eliminarItem('usuario'); 
       window.dispatchEvent(new CustomEvent('sesion-expirada'));
     }
-    
     return Promise.reject(error);
   }
 );

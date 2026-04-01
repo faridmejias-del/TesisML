@@ -1,6 +1,7 @@
 import React, { createContext, useState, useMemo, useEffect, useContext } from 'react';
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import getTheme from '../theme';
+import { storage } from '../utils/storage'; 
 
 // Creamos el contexto
 const ThemeContext = createContext();
@@ -23,12 +24,18 @@ export const CustomThemeProvider = ({ children }) => {
 
     // Cada vez que el modo cambie, lo guardamos en localStorage
     useEffect(() => {
-        localStorage.setItem('appTheme', mode);
-    }, [mode]);
+        const cargarTema = async () => {
+            const savedMode = await storage.obtenerItem('themeMode'); // Agregar await
+            if (savedMode) setMode(savedMode);
+        };
+        cargarTema();
+    }, []);
 
     // Función para alternar entre claro y oscuro
-    const toggleTheme = () => {
-        setMode((prev) => (prev === 'light' ? 'dark' : 'light'));
+    const toggleTheme = async () => { // Hacer la función async
+        const newMode = mode === 'light' ? 'dark' : 'light';
+        setMode(newMode);
+        await storage.guardarItem('themeMode', newMode); // Agregar await
     };
 
     // Generamos el tema de Material UI usando la función de tu theme.js

@@ -25,8 +25,8 @@ def actualizar_precios_empresa(db: Session, empresa_id: int, ticker: str):
         # Si ya hay datos, empezamos desde el día siguiente al último registro
         start_date = (ultimo_precio + timedelta(days=1)).strftime('%Y-%m-%d')
     else:
-        # Si es nueva, traemos los últimos 2 años por defecto
-        start_date = (datetime.now() - timedelta(days=730)).strftime('%Y-%m-%d')
+        # Si es nueva, traigo todos desde el inicio de Yahoo Finance
+        start_date = "1900-01-01"
 
     print(f"Descargando {ticker} desde {start_date}...")
 
@@ -36,13 +36,21 @@ def actualizar_precios_empresa(db: Session, empresa_id: int, ticker: str):
 
         if data.empty:
             print(f"ℹ️ No hay datos nuevos para {ticker}.")
-            return
+            return {"message": f"No hay datos nuevos para {ticker}.", "registros_actualizados": 0}
+
+        # --- NUEVO: SOLUCIÓN AL ERROR DE MULTIINDEX DE YFINANCE ---
+        # Si yfinance nos entrega columnas anidadas, eliminamos el nivel del Ticker
+        if isinstance(data.columns, pd.MultiIndex):
+            data.columns = data.columns.droplevel(1)
+        # ----------------------------------------------------------
 
         # 3. Preparar los registros para inserción masiva
         nuevos_registros = []
         for index, row in data.iterrows():
-            # Validar que el precio no sea nulo
+            
+            # Ahora row['Close'] volverá a ser un número simple
             precio_cierre = float(row['Close'])
+            
             if pd.isna(precio_cierre): continue
 
             nuevo_precio = PrecioHistorico(
@@ -58,6 +66,9 @@ def actualizar_precios_empresa(db: Session, empresa_id: int, ticker: str):
             db.add_all(nuevos_registros)
             db.commit()
             print(f"✅ {ticker}: {len(nuevos_registros)} registros actualizados.")
+            return {"message": f"Precios actualizados para {ticker}", "registros_actualizados": len(nuevos_registros)}
+        else:
+            return {"message": f"No se encontraron precios válidos para {ticker}.", "registros_actualizados": 0}
 
     except Exception as e:
         db.rollback()
@@ -73,7 +84,7 @@ def ejecutar_actualizacion_masiva():
         print(f"🚀 Iniciando actualización para {len(empresas)} empresas...")
 
         for empresa in empresas:
-            actualizar_precios_empresa(db, empresa.IdEmpresa, empresa.Ticker)
+            actualizar_precios_empresa(db, empresa.IdEmpresa, empresa.Ticket)
         
         print("🏁 Proceso de actualización finalizado exitosamente.")
     finally:

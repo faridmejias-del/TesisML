@@ -1,9 +1,18 @@
-from datetime import datetime
+import yfinance as yf
+import pandas as pd
+import warnings
+import math
+from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
-from app.models import PrecioHistorico, Empresa # Importación directa
+from sqlalchemy import func
+
+# Importación directa de modelos y esquemas
+from app.models import PrecioHistorico, Empresa 
 from app.schemas.schemas import PrecioHistoricoCreate, PrecioHistoricoOut
 from app.exceptions import ResourceNotFoundError, DuplicateResourceError, InvalidDataError
-import math
+
+# Desactivar advertencias de yfinance
+warnings.filterwarnings("ignore", category=FutureWarning)
 
 class PrecioHistoricoService:
 
@@ -24,7 +33,6 @@ class PrecioHistoricoService:
     @staticmethod
     def get_by_empresa(db: Session, empresa_id: int):
         # 1. Traemos los datos de la base de datos
-        # Nota: Usamos PrecioHistorico directamente ya que está en tus imports
         resultados = db.query(PrecioHistorico).filter(
             PrecioHistorico.IdEmpresa == empresa_id
         ).all()
@@ -39,6 +47,65 @@ class PrecioHistoricoService:
                     if math.isfinite(valor_float):
                         datos_limpios.append(r)
                 except (ValueError, TypeError):
-                    continue # Si no se puede convertir a número, lo ignoramos
-                
+                    continue
+        
         return datos_limpios
+
+    # --- NUEVO SERVICIO INTEGRADO ---
+    @staticmethod
+    def actualizar_precios_empresa(db: Session, empresa_id: int, ticker: str):
+        """
+        Descarga y actualiza los precios históricos de una empresa específica
+        usando inserción masiva (bulk insert) para optimizar la base de datos.
+        """
+        # 1. Determinar desde qué fecha descargar
+        ultimo_precio = db.query(func.max(PrecioHistorico.Fecha)).filter(
+            PrecioHistorico.IdEmpresa == empresa_id
+        ).scalar()
+
+        if ultimo_precio:
+            # Si ya hay datos, empezamos desde el día siguiente al último registro
+            start_date = (ultimo_precio + timedelta(days=1)).strftime('%Y-%m-%d')
+        else:
+            # Si es nueva, traemos los últimos 2 años por defecto
+            start_date = (datetime.now() - timedelta(days=730)).strftime('%Y-%m-%d')
+
+        print(f"Descargando {ticker} desde {start_date}...")
+
+        try:
+            # 2. Descarga de Yahoo Finance
+            data = yf.download(ticker, start=start_date, progress=False)
+
+            if data.empty:
+                print(f"ℹ️ No hay datos nuevos para {ticker}.")
+                return {"message": f"No hay datos nuevos para {ticker}.", "registros_actualizados": 0}
+
+            # 3. Preparar los registros para inserción masiva
+            nuevos_registros = []
+            for index, row in data.iterrows():
+                # Validar que el precio no sea nulo
+                precio_cierre = float(row['Close'])
+                if pd.isna(precio_cierre): continue
+
+                nuevo_precio = PrecioHistorico(
+                    IdEmpresa=empresa_id,
+                    Fecha=index.date(),
+                    PrecioCierre=precio_cierre,
+                    Volumen=int(row['Volume']) if not pd.isna(row['Volume']) else 0
+                )
+                nuevos_registros.append(nuevo_precio)
+
+            # 4. Ejecutar la optimización: Guardar todos de un solo golpe
+            if nuevos_registros:
+                db.add_all(nuevos_registros)
+                db.commit()
+                print(f"✅ {ticker}: {len(nuevos_registros)} registros actualizados.")
+                return {"message": f"Precios actualizados para {ticker}", "registros_actualizados": len(nuevos_registros)}
+            else:
+                return {"message": f"No se encontraron precios válidos para {ticker}.", "registros_actualizados": 0}
+
+        except Exception as e:
+            db.rollback()
+            print(f"❌ Error al actualizar {ticker}: {e}")
+            # Levantamos un error personalizado para que FastAPI lo atrape y lo mande al Frontend
+            raise InvalidDataError(f"Error al descargar o guardar precios de Yahoo Finance para {ticker}")

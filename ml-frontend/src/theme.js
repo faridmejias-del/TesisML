@@ -3,8 +3,7 @@ import { createTheme } from '@mui/material/styles';
 import { tokens } from './constants/colors';
 
 const getTheme = (mode) => {
-  const isLight = mode === 'light';
-  const t = tokens[mode]; // Obtiene el objeto de colores según el modo
+  const t = tokens[mode]; // Obtiene el objeto de colores limpio
 
   return createTheme({
     palette: {
@@ -12,6 +11,7 @@ const getTheme = (mode) => {
       primary: t.primary,
       secondary: t.secondary,
       background: t.background,
+      text: t.text, // <-- Mapeo directo del texto
       layout: t.layout,
       chip: t.chip,
       market: t.market,
@@ -74,7 +74,7 @@ const getTheme = (mode) => {
         styleOverrides: {
           root: {
             borderRadius: '24px', 
-            boxShadow: isLight ? '0 4px 6px -1px rgb(0 0 0 / 0.1)' : '0 4px 20px -5px rgb(0 0 0 / 0.7)', 
+            boxShadow: t.effects.cardShadow, // <-- Mapeo directo de la sombra
             backgroundImage: 'none',
           },
         },
@@ -84,7 +84,7 @@ const getTheme = (mode) => {
         styleOverrides: {
           root: {
             borderRadius: '24px',
-            boxShadow: isLight ? '0 4px 6px -1px rgb(0 0 0 / 0.1)' : '0 4px 20px -5px rgb(0 0 0 / 0.7)',
+            boxShadow: t.effects.cardShadow, // <-- Mapeo directo de la sombra
             backgroundImage: 'none',
           },
         },

@@ -1,8 +1,8 @@
 // src/features/dashboard/hooks/useDashboard.js
 import { useState, useEffect, useCallback } from 'react';
-import toast from 'react-hot-toast';
 import { portafolioService, empresaService } from '../../../services';
 import resultadoService from '../../../services/resultadoService';
+import { notificar } from '../../../utils/notificaciones'; // Usamos tu abstracción
 
 export const useDashboard = (usuario) => {
     const [cargando, setCargando] = useState(true);
@@ -14,7 +14,7 @@ export const useDashboard = (usuario) => {
         distribucionSectores: []
     });
 
-    // NUEVO: Separamos en useCallback para permitir "Pull to Refresh"
+    // Separamos en useCallback para permitir "Pull to Refresh"
     const cargarDashboard = useCallback(async () => {
         if (!usuario?.id) return;
 
@@ -95,8 +95,8 @@ export const useDashboard = (usuario) => {
 
         } catch (error) {
             console.error("Error cargando dashboard:", error);
-            // Mensaje ajustado pensando en que las redes móviles fallan más
-            toast.error("Error de conexión. Verifica tu internet y reintenta."); 
+            // 🔥 CAMBIO AQUÍ: Usamos la abstracción en lugar de toast directo
+            notificar.error("Error de conexión. Verifica tu internet y reintenta."); 
         } finally {
             setCargando(false);
         }
@@ -106,6 +106,6 @@ export const useDashboard = (usuario) => {
         cargarDashboard();
     }, [cargarDashboard]);
 
-    // NUEVO: Exportamos 'recargar' 
+    // Exportamos 'recargar' 
     return { cargando, estadisticas, recargar: cargarDashboard };
 };

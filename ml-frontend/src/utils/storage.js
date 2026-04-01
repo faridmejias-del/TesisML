@@ -1,13 +1,15 @@
 // src/utils/storage.js
 export const storage = {
-  guardarItem: (key, value) => {
+  guardarItem: async (key, value) => {
     localStorage.setItem(key, JSON.stringify(value));
+    return Promise.resolve(); // Simulamos asincronía
   },
-  obtenerItem: (key) => {
+  obtenerItem: async (key) => {
     const item = localStorage.getItem(key);
-    return item ? JSON.parse(item) : null;
+    return Promise.resolve(item ? JSON.parse(item) : null);
   },
-  eliminarItem: (key) => {
+  eliminarItem: async (key) => {
     localStorage.removeItem(key);
+    return Promise.resolve();
   }
 };

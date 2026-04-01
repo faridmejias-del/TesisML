@@ -2,8 +2,8 @@
 import React from 'react';
 import { Box } from '@mui/material';
 import DashboardAnalitico from '../../../features/portafolio/components/DashboardAnalitico'; // Ajusta la ruta si es necesario
-import ShowChartIcon from '@mui/icons-material/ShowChart';
 import PageHeader from '../../../components/PageHeader';
+import PieChartIcon from '@mui/icons-material/PieChart';
 
 const AnalisisPortafolio = () => {
   return (
@@ -12,7 +12,7 @@ const AnalisisPortafolio = () => {
       <PageHeader 
         titulo="Análisis de Portafolio:"
         subtitulo="Revisa el rendimiento histórico, métricas de riesgo y la distribución sectorial de tus activos."
-        icono={ShowChartIcon} 
+        icono={PieChartIcon} 
       />
 
       {/* Aquí renderizamos el dashboard que creamos en el paso anterior */}

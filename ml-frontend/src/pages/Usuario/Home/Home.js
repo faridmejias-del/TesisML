@@ -25,7 +25,7 @@ import TrendingFlatIcon from '@mui/icons-material/TrendingFlat';
 import AnalyticsIcon from '@mui/icons-material/Analytics';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import AutoGraphIcon from '@mui/icons-material/AutoGraph';
-import ShowChartIcon from '@mui/icons-material/ShowChart';
+import HomeIcon from '@mui/icons-material/Home';
 
 // Paleta de colores para el gráfico de anillo
 const COLORES_SECTORES = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'];
@@ -64,7 +64,7 @@ export default function Home() {
         <PageHeader 
             titulo={"¡Hola, " + (usuario?.nombre?.split(' ')[0] || 'Inversor') + "!"}
             subtitulo="Aquí tienes un resumen de tu portafolio y las últimas señales del mercado."
-            icono={ShowChartIcon} 
+            icono={HomeIcon} 
         />
 
 

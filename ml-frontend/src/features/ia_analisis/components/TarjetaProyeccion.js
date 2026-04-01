@@ -75,7 +75,7 @@ const TarjetaProyeccion = ({ datos, seleccionado, onToggle }) => {
                 mt: 2, p: 1.5, borderRadius: 1.5, display: 'flex', alignItems: 'center', gap: 1.5,
                 // Colores dinámicos del tema para el mensaje de recomendación
                 bgcolor: esAlza ? 'success.light' : 'error.light', 
-                color: 'white' // Letra blanca para contrastar
+                color: 'primary.contrastText' // Letra blanca para contrastar
             }}>
                 {esAlza ? <TrendingUpTwoToneIcon fontSize="large" /> : <TrendingDownTwoToneIcon fontSize="large" />}
                 <Typography variant="body2" fontWeight="500">

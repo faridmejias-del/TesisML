@@ -254,7 +254,7 @@ class MetricasOut(MetricasBase):
     FechaEntrenamiento: datetime = Field(..., description="Fecha del entrenamiento del modelo")
     IdModelo: int = Field(..., description="Id del modelo al que pertenecen las métricas")
 
-    model_config = {"from_atributes": True}
+    model_config = {"from_attributes": True}
 
 #Autenticacion 
 class Token(BaseModel):

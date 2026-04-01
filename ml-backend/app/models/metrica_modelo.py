@@ -12,7 +12,7 @@ class MetricaModelo(Base):
 
     Loss = Column(DECIMAL(10,6))
     MAE = Column(DECIMAL(10,6))
-    valLoss = Column(DECIMAL(10,6))
+    ValLoss = Column(DECIMAL(10,6))
     ValMAE = Column(DECIMAL(10,6))
 
 

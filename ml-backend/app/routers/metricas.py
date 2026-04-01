@@ -7,7 +7,7 @@ from app.schemas import schemas
 
 router = APIRouter(prefix="/api/v1/metricas", tags=["Metricas IA"])
 
-@router.get("/modelo/{id_modelo}", response_model=List[schemas.MetricaModeloOut])
+@router.get("/modelo/{id_modelo}", response_model=List[schemas.MetricasOut])
 def obtener_historial_metricas(id_modelo: int, limite: int = 10, db: Session = Depends(get_db)):
     metricas = MetricaService.obtener_metricas_por_modelo(db, id_modelo, limite)
     

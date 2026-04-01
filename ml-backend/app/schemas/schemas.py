@@ -241,7 +241,7 @@ class MetricasBase(BaseModel):
 class MetricasCreate(MetricasBase):
     pass
 
-class MetricasOut(BaseModel):
+class MetricasOut(MetricasBase):
     IdMetricas: int = Field(..., description="Id único de las métricas")
     Loss: Optional[float] = Field(None, description="Valor de pérdida (loss) del modelo")
     MAE: Optional[float] = Field(None, description="Error absoluto medio (MAE) del modelo")

@@ -6,7 +6,7 @@ def obtener_modelo_v2(shape_1, shape_2):
     return Sequential([
         Input(shape=(shape_1, shape_2)),
 
-        Bidirectional(LSTM(32, return_sequences=True)), 
+        Bidirectional(LSTM(32, return_sequences=False)), 
         Dropout(0.2), 
 
         Dense(16, activation='relu'),

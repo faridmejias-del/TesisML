@@ -7,7 +7,7 @@ def obtener_modelo_v1(shape_1, shape_2):
     return Sequential([
         Input(shape=(shape_1, shape_2)),
 
-        LSTM(32, return_sequences=True),
+        LSTM(32, return_sequences=False),
         Dropout(0.2),
         
         Dense(16, activation='relu'),

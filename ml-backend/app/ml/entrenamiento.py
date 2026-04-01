@@ -178,12 +178,16 @@ def entrenar_y_guardar(id_modelo_especifico: int = None):
         x_val = x_train[split_idx:]
         y_val_real = y_train[split_idx:]
 
-        y_val_pred = model.predict(x_val).flatten()
+        y_val_pred = model.predict(x_val, verbose=0)
+
+        if len(y_val_pred.shape) == 3:
+            print("⚠️ Aviso: El modelo retornó secuencias 3D. Aplanando automáticamente...")
+            y_val_pred = y_val_pred[:, -1, 0] # Toma todas las filas, el último día, la única columna
         
         #Si la diferencia > 0, significa que el precio subio
         ##Si no bajo
         direccion_real = (np.diff(y_val_real.flatten()) > 0).astype(int)
-        direccion_pred = (np.diff(y_val_pred.flatten()) > 0).asptype(int)
+        direccion_pred = (np.diff(y_val_pred.flatten()) > 0).astype(int)
 
         acc = accuracy_score(direccion_real, direccion_pred)
         prec = precision_score(direccion_real, direccion_pred, zero_division=0)

@@ -52,6 +52,19 @@ export function AuthProvider({ children }) {
     await storage.guardarItem('usuario', usuarioActualizado);
   };
 
+  const parseBackendError = (error) => {
+        const detail = error.response?.data?.detail;
+        if (!detail) return "Ocurrió un error de conexión al servidor";
+        
+        // Si el detalle es un texto normal (ej: "Credenciales inválidas")
+        if (typeof detail === 'string') return detail;
+        
+        // Si el detalle es el array de validación de FastAPI (Error 422)
+        if (Array.isArray(detail)) return "Verifica que todos los campos estén correctamente llenados.";
+
+        return "Ocurrió un error inesperado";
+    };
+
   const login = async (email, password) => {
     try {
       await authService.login(email, password);
@@ -62,7 +75,7 @@ export function AuthProvider({ children }) {
 
       return { success: true, usuario: userInfo };
     } catch (error) {
-      return { success: false, message: error.response?.data?.detail || "Error de credenciales" };
+      return { success: false, message: parseBackendError(error.response?.data?.detail) || "Error de credenciales" };
     }
   };
 
@@ -80,7 +93,7 @@ export function AuthProvider({ children }) {
       return await login(email, password);
       
     } catch (error) {
-      const mensajeError = error.response?.data?.detail?.[0]?.msg || error.response?.data?.detail || "Error al crear la cuenta. Verifica los datos.";
+      const mensajeError = parseBackendError(error.response?.data?.detail) || "Error al crear la cuenta. Verifica los datos.";
       return { success: false, message: mensajeError };
     }
   };

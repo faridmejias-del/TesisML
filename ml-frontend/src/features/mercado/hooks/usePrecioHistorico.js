@@ -6,19 +6,17 @@ import { precioService } from '../../../services';
 export const usePrecioHistorico = (empresaId) => {
     const [rango, setRango] = useState('6M');
 
-    // React Query maneja la llamada a la API
     const { data: datosOriginales, isLoading: cargando } = useQuery({
         queryKey: ['precios_historicos', empresaId],
         queryFn: () => precioService.getByEmpresa(empresaId),
-        enabled: !!empresaId, // No busca si no hay empresa
-        staleTime: 1000 * 60 * 10, // 10 minutos de caché
+        enabled: !!empresaId, 
+        staleTime: 1000 * 60 * 10, 
     });
 
     const handleCambioRango = (event, nuevoRango) => {
         if (nuevoRango !== null) setRango(nuevoRango);
     };
 
-    // Formateo de fechas local (Intacto de tu lógica original)
     const datosFiltrados = useMemo(() => {
         if (!datosOriginales || !datosOriginales.length) return [];
 
@@ -30,17 +28,19 @@ export const usePrecioHistorico = (empresaId) => {
                 else if (typeof item.Fecha === 'number') fechaObj = new Date(item.Fecha);
 
                 if (!fechaObj || isNaN(fechaObj.getTime())) fechaObj = new Date(item.Fecha);
-                if (isNaN(fechaObj.getTime())) return { ...item, fechaValida: null, FechaCorta: 'Err' };
+                if (isNaN(fechaObj.getTime())) return { ...item, fechaValida: null, FechaCorta: 'Err', FechaLarga: 'Err' };
 
                 return {
                     ...item,
                     fechaValida: fechaObj,
                     FechaCorta: tipoCorta 
                         ? fechaObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
-                        : fechaObj.toLocaleDateString('es-ES')
+                        : fechaObj.toLocaleDateString('es-ES'),
+                    // NUEVO: Creamos una fecha siempre completa para el Tooltip
+                    FechaLarga: fechaObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
                 };
             } catch (e) {
-                return { ...item, fechaValida: null, FechaCorta: 'Err' };
+                return { ...item, fechaValida: null, FechaCorta: 'Err', FechaLarga: 'Err' };
             }
         };
 

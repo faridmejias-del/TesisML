@@ -72,7 +72,11 @@ function AuthForm({ modoInicialRegistro = false }) {
     };
 
     return (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, width: '100%', mt: 1 }}>
+        <Box 
+            component="form" 
+            onSubmit={handleSubmit} 
+            sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, width: '100%', mt: 1 }}
+        >
             <Typography variant="h5" align="center" fontWeight="900" color="text.primary">
                 {esRegistro ? 'Crear una Cuenta' : '¡Hola de nuevo!'}
             </Typography>
@@ -104,12 +108,24 @@ function AuthForm({ modoInicialRegistro = false }) {
             />
 
             <Button 
-                onClick={handleSubmit} 
+                type="submit" 
                 variant="contained" color="primary" size="large" fullWidth disabled={cargando}
                 sx={{ mt: 1, boxShadow: 3 }}
             >
                 {cargando ? <CircularProgress size={24} color="inherit" /> : (esRegistro ? 'Registrarse' : 'Ingresar al sistema')}
             </Button>
+
+
+            <Typography align="center" variant="body2" sx={{ mt: 1 }}>
+                {esRegistro ? '¿Ya tienes cuenta? ' : '¿No tienes cuenta? '}
+                <Link 
+                    component="button" type="button" variant="body2" fontWeight="bold"
+                    onClick={alternarModo}
+                >
+                    {esRegistro ? 'Inicia sesión aquí' : 'Regístrate aquí'}
+                </Link>
+            </Typography>
+
 
             {/* --- NUEVO ENLACE DE RECUPERACIÓN DE CONTRASEÑA --- */}
             {!esRegistro && (
@@ -127,16 +143,6 @@ function AuthForm({ modoInicialRegistro = false }) {
                 </Typography>
             )}
             {/* -------------------------------------------------- */}
-
-            <Typography align="center" variant="body2" sx={{ mt: 1 }}>
-                {esRegistro ? '¿Ya tienes cuenta? ' : '¿No tienes cuenta? '}
-                <Link 
-                    component="button" type="button" variant="body2" fontWeight="bold"
-                    onClick={alternarModo}
-                >
-                    {esRegistro ? 'Inicia sesión aquí' : 'Regístrate aquí'}
-                </Link>
-            </Typography>
 
             <Divider sx={{ my: 1 }} />
 

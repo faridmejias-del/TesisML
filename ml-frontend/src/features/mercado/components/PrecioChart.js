@@ -1,7 +1,7 @@
 // src/features/mercado/components/PrecioChart.js
 import React, { memo } from 'react';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
-import { Box, Paper, Typography, ToggleButton, ToggleButtonGroup, CircularProgress } from '@mui/material';
+import { Box, Typography, ToggleButton, ToggleButtonGroup, CircularProgress } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { usePrecioHistorico } from '../hooks/usePrecioHistorico';
 
@@ -16,17 +16,15 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
         { label: 'Todo', v: 'TODO' }
     ];
 
-    // SIEMPRE devolvemos el Paper para mantener la estructura estática y evitar saltos visuales.
     return (
-        <Paper sx={{ p: { xs: 2, sm: 3 }, mt: 2, display: 'flex', flexDirection: 'column', minHeight: '450px' }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%' }}>
             
-            {/* CABECERA: Siempre visible */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: { xs: 'wrap', md: 'nowrap' }, gap: 2, mb: 3 }}>
+            {/* CABECERA */}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: { xs: 'wrap', md: 'nowrap' }, gap: 2, mb: 2 }}>
                 <Typography variant="h6" component="h4" fontWeight="bold" color="text.primary">
                     Historial de Precios{nombreEmpresa ? `: ${nombreEmpresa}` : ''}
                 </Typography>
                 
-                {/* Solo mostramos los botones si hay una empresa y no está cargando */}
                 {empresaId && !cargando && (
                     <Box sx={{ width: { xs: '100%', md: 'auto' }, overflowX: 'auto', pb: 0.5, scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } }}>
                         <ToggleButtonGroup 
@@ -57,26 +55,27 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
                 )}
             </Box>
 
-            {/* ZONA DE CONTENIDO: Cambia según el estado */}
-            <Box sx={{ width: '100%', flexGrow: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            {/* CONTENEDOR DEL GRÁFICO: relative y flexGrow garantizan que ocupa el 100% de lo que sobra */}
+            <Box sx={{ width: '100%', flexGrow: 1, minHeight: 0, position: 'relative' }}>
                 
                 {!empresaId ? (
-                    // Estado 1: Esperando selección
-                    <Typography variant="body1" fontWeight="500" color="text.secondary">
-                        Esperando selección de empresa...
-                    </Typography>
+                    /* Centrado absoluto para que no rompa el flexbox del padre */
+                    <Box sx={{ position: 'absolute', inset: 0, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                        <Typography variant="body1" fontWeight="500" color="text.secondary">
+                            Esperando selección de empresa...
+                        </Typography>
+                    </Box>
                 
                 ) : cargando ? (
-                    // Estado 2: Cargando
-                    <Box display="flex" alignItems="center" gap={2} color="text.secondary">
+                    <Box sx={{ position: 'absolute', inset: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2, color: 'text.secondary' }}>
                         <CircularProgress size={24} />
                         <Typography>Dibujando gráfica...</Typography>
                     </Box>
                 
                 ) : (
-                    // Estado 3: Gráfico cargado
-                    <ResponsiveContainer width="100%" height={350}>
-                        <AreaChart data={datosFiltrados}>
+                    <ResponsiveContainer width="100%" height="100%">
+                        {/* Se añadió un margin interno para alinear mejor las etiquetas y aprovechar el espacio */}
+                        <AreaChart data={datosFiltrados} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
                             <defs>
                                 <linearGradient id="colorPrecio" x1="0" y1="0" x2="0" y2="1">
                                     <stop offset="5%" stopColor={theme.palette.primary.main} stopOpacity={0.3}/>
@@ -87,12 +86,19 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
                             <XAxis dataKey="FechaCorta" fontSize={10} tick={{fill: theme.palette.text.secondary}} minTickGap={30}/>
                             <YAxis domain={['auto', 'auto']} fontSize={10} orientation="right" tick={{fill: theme.palette.text.secondary}} />
                             <Tooltip 
+                                labelFormatter={(label, payload) => {
+                                    if (payload && payload.length > 0) {
+                                        return payload[0].payload.FechaLarga;
+                                    }
+                                    return label;
+                                }}
                                 contentStyle={{
                                     borderRadius: '8px', 
                                     border: 'none', 
                                     boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
                                     backgroundColor: theme.palette.background.paper, 
-                                    color: theme.palette.text.primary
+                                    color: theme.palette.text.primary,
+                                    textTransform: 'capitalize'
                                 }} 
                             />
                             <Area type="monotone" dataKey="PrecioCierre" stroke={theme.palette.primary.main} strokeWidth={2} fillOpacity={1} fill="url(#colorPrecio)" />
@@ -100,7 +106,7 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
                     </ResponsiveContainer>
                 )}
             </Box>
-        </Paper>
+        </Box>
     );
 }
 

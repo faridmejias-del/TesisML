@@ -35,6 +35,32 @@ MAPA_ARQUITECTURAS = {
     "v2": obtener_modelo_v2
 }
 
+# =====================================================================
+# 1. CLASE EARLY STOPPING
+# =====================================================================
+class EarlyStopping:
+    def __init__(self, paciencia=5, delta=0):
+        self.paciencia = paciencia
+        self.delta = delta
+        self.contador = 0
+        self.mejor_loss = None
+        self.detener = False
+        self.mejores_pesos = None
+
+    def __call__(self, val_loss, modelo):
+        if self.mejor_loss is None:
+            self.mejor_loss = val_loss
+            self.mejores_pesos = copy.deepcopy(modelo.state_dict())
+        elif val_loss > self.mejor_loss - self.delta:
+            self.contador += 1
+            if self.contador >= self.paciencia:
+                self.detener = True
+        else:
+            self.mejor_loss = val_loss
+            self.mejores_pesos = copy.deepcopy(modelo.state_dict())
+            self.contador = 0
+# =====================================================================
+
 def calcular_indicadores(df):
     close = df['Close']
     high = df['High']
@@ -137,20 +163,31 @@ def entrenar_y_guardar(id_modelo_especifico: int = None):
     ruta_modelos = os.path.join(os.path.dirname(__file__), 'models')
     os.makedirs(ruta_modelos, exist_ok=True)
 
-    # --- CONFIGURACIÓN PYTORCH ---
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"\n💻 EJECUTANDO EN: {device.type.upper()}")
 
     x_tensor = torch.tensor(x_train, dtype=torch.float32)
     y_tensor = torch.tensor(y_train, dtype=torch.float32).view(-1, 1)
     
-    dataset = TensorDataset(x_tensor, y_tensor)
-    train_size = int(0.9 * len(dataset))
-    val_size = len(dataset) - train_size
-    train_dataset, val_dataset = torch.utils.data.random_split(dataset, [train_size, val_size])
+    # --- CORRECCIÓN MATEMÁTICA: Series de Tiempo ---
+    # Corte secuencial para evitar predecir el pasado con datos del futuro
+    split_idx = int(0.9 * len(x_tensor))
+    train_dataset = TensorDataset(x_tensor[:split_idx], y_tensor[:split_idx])
+    val_dataset = TensorDataset(x_tensor[split_idx:], y_tensor[split_idx:])
     
-    train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=64, shuffle=False)
+    train_loader = DataLoader(
+        train_dataset, 
+        batch_size=128, 
+        shuffle=True,      # Shuffle solo en entrenamiento está bien
+        pin_memory=True,   
+        num_workers=0      
+    )
+    val_loader = DataLoader(
+        val_dataset, 
+        batch_size=128, 
+        shuffle=False,     # Validación estrictamente en orden
+        pin_memory=True    
+    )
 
     for modelo_db in modelos_activos:
         print(f"\n🚀 Entrenando {modelo_db.Nombre} (v{modelo_db.Version}) en PyTorch...")
@@ -164,24 +201,19 @@ def entrenar_y_guardar(id_modelo_especifico: int = None):
         criterion_mae = nn.L1Loss() 
         optimizer = optim.Adam(model.parameters(), lr=0.0005)
         
-        mejor_val_loss = float('inf')
-        paciencia_actual = 0
-        paciencia_max = 5
-        mejores_pesos = None
+        early_stopping = EarlyStopping(paciencia=5, delta=0.0)
         
         historial = {'loss': [], 'mae': [], 'val_loss': [], 'val_mae': []}
-        epochs = 25 #Epocas 
+        epochs = 25
 
         for epoch in range(epochs):
             model.train()
             train_loss, train_mae = 0.0, 0.0
             
-            # --- NUEVA BARRA DE PROGRESO ---
-            # leave=False hace que la barra desaparezca al llegar al 100% para no ensuciar la consola
             loop_entrenamiento = tqdm(train_loader, desc=f"Epoch [{epoch+1}/{epochs}]", leave=False, unit="batch")
             
             for x_batch, y_batch in loop_entrenamiento:
-                x_batch, y_batch = x_batch.to(device), y_batch.to(device)
+                x_batch, y_batch = x_batch.to(device, non_blocking=True), y_batch.to(device, non_blocking=True)
                 optimizer.zero_grad()
                 
                 pred = model(x_batch)
@@ -193,19 +225,16 @@ def entrenar_y_guardar(id_modelo_especifico: int = None):
                 
                 train_loss += loss.item()
                 train_mae += mae.item()
-                
-                # Actualiza los números a la derecha de la barra en tiempo real
                 loop_entrenamiento.set_postfix(loss=f"{loss.item():.4f}", mae=f"{mae.item():.4f}")
                 
             train_loss /= len(train_loader)
             train_mae /= len(train_loader)
             
-            # Validación
             model.eval()
             val_loss, val_mae = 0.0, 0.0
             with torch.no_grad():
                 for x_val, y_val in val_loader:
-                    x_val, y_val = x_val.to(device), y_val.to(device)
+                    x_val, y_val = x_val.to(device, non_blocking=True), y_val.to(device, non_blocking=True)
                     pred = model(x_val)
                     val_loss += criterion_huber(pred, y_val).item()
                     val_mae += criterion_mae(pred, y_val).item()
@@ -218,28 +247,32 @@ def entrenar_y_guardar(id_modelo_especifico: int = None):
             historial['val_loss'].append(val_loss)
             historial['val_mae'].append(val_mae)
             
-            # Imprime el resumen clásico de la época una vez que la barra desaparece
             print(f"Epoch [{epoch+1}/{epochs}] - loss: {train_loss:.4f} - mae: {train_mae:.4f} - val_loss: {val_loss:.4f} - val_mae: {val_mae:.4f}")
             
-            if val_loss < mejor_val_loss:
-                mejor_val_loss = val_loss
-                paciencia_actual = 0
-                mejores_pesos = copy.deepcopy(model.state_dict())
-            else:
-                paciencia_actual += 1
-                if paciencia_actual >= paciencia_max:
-                    print(f"⏹️ EarlyStopping en la época {epoch+1}")
-                    break
+            early_stopping(val_loss, model)
+            if early_stopping.detener:
+                print(f"⏹️ EarlyStopping accionado: El modelo dejó de aprender en la época {epoch+1}")
+                break
         
-        model.load_state_dict(mejores_pesos)
+        model.load_state_dict(early_stopping.mejores_pesos)
         model.eval()
         
-        split_idx = int(len(x_train) * 0.9)
-        x_val_final = torch.tensor(x_train[split_idx:], dtype=torch.float32).to(device)
+        # --- SOLUCIÓN OOM: EVALUACIÓN POR LOTES ---
+        x_val_final = x_tensor[split_idx:]
         y_val_real = y_train[split_idx:]
         
+        y_val_pred_list = []
+        lote_evaluacion = 128 # Usamos el mismo tamaño de lote seguro
+        
         with torch.no_grad():
-            y_val_pred = model(x_val_final).cpu().numpy()
+            for i in range(0, len(x_val_final), lote_evaluacion):
+                x_batch = x_val_final[i:i+lote_evaluacion].to(device)
+                pred = model(x_batch).cpu().numpy()
+                y_val_pred_list.append(pred)
+
+        # Unimos las predicciones devueltas por la gráfica
+        y_val_pred = np.vstack(y_val_pred_list)
+        # ------------------------------------------
 
         direccion_real = (np.diff(y_val_real.flatten()) > 0).astype(int)
         direccion_pred = (np.diff(y_val_pred.flatten()) > 0).astype(int)
@@ -267,7 +300,7 @@ def entrenar_y_guardar(id_modelo_especifico: int = None):
         finally:
             db_local.close()
 
-        torch.save(mejores_pesos, os.path.join(ruta_modelos, f'modelo_acciones_{modelo_db.Version}.pth'))
+        torch.save(early_stopping.mejores_pesos, os.path.join(ruta_modelos, f'modelo_acciones_{modelo_db.Version}.pth'))
         print(f"✅ {modelo_db.Nombre} (.pth) guardado.")
 
     joblib.dump(scaler, os.path.join(ruta_modelos, 'scaler.pkl'))

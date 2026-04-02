@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'ml-frontend/**'
+      - 'version.txt'
 
 jobs:
   build-and-deploy:

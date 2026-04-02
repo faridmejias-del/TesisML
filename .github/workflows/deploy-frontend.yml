@@ -8,9 +8,8 @@ on:
       - 'ml-frontend/**'
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
-
     defaults:
       run:
         working-directory: ml-frontend
@@ -32,15 +31,26 @@ jobs:
       - name: Build React
         run: npm run build
 
-      - name: Configurar SSH
+      - name: Parchear URLs de Localhost a Producción (/api)
+        run: |
+          # Ejecutamos tu mismo comando grep/sed pero directamente en el runner de GitHub
+          grep -ril "http://localhost:8000" build/ | xargs -r sed -i 's|http://localhost:8000|/api|g'
+
+      - name: Configurar SSH y Deploy con rsync
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-
-      - name: Deploy con rsync
-        run: |
+          
+          # Añadir el host a known_hosts para evitar el prompt de confirmación
+          ssh-keyscan -H $SSH_HOST >> ~/.ssh/known_hosts
+          
+          # Sincronizar la carpeta build al servidor
           rsync -avz --delete \
-          -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" \
+          -e "ssh -i ~/.ssh/id_rsa" \
           build/ \
-          ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/var/www/html/frontend
+          $SSH_USER@$SSH_HOST:/var/www/html/ml-frontend/build/

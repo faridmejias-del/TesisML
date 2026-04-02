@@ -53,7 +53,7 @@ function EmpresaTable({
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
                 <Box>
                     <Typography variant="h6" fontWeight="bold" color="text.primary" gutterBottom>
-                        Listado de Empresas
+                        Detalle de empresas analizadas
                     </Typography>
                 </Box>
                 

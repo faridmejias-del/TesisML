@@ -1,7 +1,6 @@
 // src/components/HeroSection.js
 import React from 'react';
 import { Box, Typography, Button } from '@mui/material';
-import landing1 from 'assets/landing1.png';
 
 const HeroSection = ({ abrirModalAuth }) => {
     return (
@@ -16,12 +15,16 @@ const HeroSection = ({ abrirModalAuth }) => {
                     sx={{ 
                         fontWeight: '900', 
                         color: 'text.primary', 
-                        mb: 2, 
-                        lineHeight: 1.2,
-                        fontSize: { xs: '2.2rem', sm: '3rem' }
+                        mb: 3, 
+                        lineHeight: 1.1,
+                        fontSize: { xs: '2.5rem', sm: '3.5rem', md: '4rem' } // Letra un poco más grande
                     }}
                 >
-                    Predicción Inteligente del Mercado
+                    Predicción <br sx={{ display: { xs: 'none', sm: 'block' } }}/> 
+                    <Box component="span" sx={{ color: 'primary.main' }}>
+                        Inteligente
+                    </Box> <br sx={{ display: { xs: 'none', sm: 'block' } }}/> 
+                    del Mercado
                 </Typography>
                 <Typography 
                     variant="h6" 
@@ -35,28 +38,27 @@ const HeroSection = ({ abrirModalAuth }) => {
                     Plataforma avanzada de análisis financiero impulsada por Machine Learning. 
                     Visualiza tendencias y toma decisiones informadas con modelos predictivos de vanguardia.
                 </Typography>
-                <Button 
-                    variant="contained" 
-                    color="primary" 
-                    size="large"
-                    onClick={() => abrirModalAuth(true)} 
-                    sx={{ 
-                        boxShadow: 3,
-                        width: { xs: '100%', sm: 'auto' }, 
-                        py: { xs: 1.5, sm: 1.2 },          
-                        px: { sm: 4 },                     
-                        fontSize: { xs: '1.1rem', sm: '1rem' },
-                        fontWeight: 'bold',
-                        borderRadius: 2
-                    }}
-                >
-                    Comenzar ahora
-                </Button>
+                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                    <Button 
+                        variant="contained" 
+                        color="primary" 
+                        size="large"
+                        onClick={() => abrirModalAuth(true)} 
+                        sx={{ 
+                            boxShadow: 3,
+                            width: { xs: '100%', sm: 'auto' }, 
+                            py: { xs: 2, sm: 2.5 },          
+                            px: { sm: 4 },                     
+                            fontSize: { xs: '1.25rem', sm: '1.25rem' },
+                            fontWeight: 'bold',
+                            borderRadius: 2
+                        }}
+                    >
+                        Comenzar ahora
+                    </Button>
+                </Box>
             </Box>
-            
-            <Box sx={{ width: '400px', height: '300px', borderRadius: 4, display: { xs: 'none', md: 'flex' }, alignItems: 'center', justifyContent: 'center' }}>  
-                <img src={landing1} alt="Análisis financiero" style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: '16px' }} />            
-            </Box>
+        
         </Box>
     );
 };

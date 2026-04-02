@@ -33,8 +33,8 @@ jobs:
 
       - name: Parchear URLs de Localhost a Producción (/api)
         run: |
-          # Ejecutamos tu mismo comando grep/sed pero directamente en el runner de GitHub
-          grep -ril "http://localhost:8000" build/ | xargs -r sed -i 's|http://localhost:8000||g'
+          # El "|| true" evita que la acción falle si no hay nada que reemplazar
+          grep -ril "http://localhost:8000" build/ | xargs -r sed -i 's|http://localhost:8000||g' || true
 
       - name: Configurar SSH y Deploy con rsync
         env:

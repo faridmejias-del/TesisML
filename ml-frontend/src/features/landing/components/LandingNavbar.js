@@ -37,13 +37,13 @@ const LandingNavbar = ({ mode, toggleTheme, abrirModalAuth, activeTab, setActive
             position="sticky" 
             color="inherit" 
             elevation={1} 
-            sx={{ top: 0, zIndex: 1100 }}
+            sx={{ top: 0, zIndex: 1100, opacity: 0.98 }} // Opacidad para un efecto de transparencia
         >
             <Container maxWidth="lg"> 
                 <Toolbar disableGutters sx={{ justifyContent: 'space-between' }}>
                     
                     {/* LOGO Y MENÚ MÓVIL (IZQUIERDA) */}
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }} >
                         <IconButton
                             size="large"
                             aria-label="menu de navegacion"

@@ -7,8 +7,8 @@ import { Box, Dialog, DialogContent, IconButton, Grid, Paper } from '@mui/materi
 import CloseIcon from '@mui/icons-material/Close';
 
 // Importación de imágenes
-import fondoClaro from '../../assets/modo-claro.jpg';
-import fondoOscuro from '../../assets/modo-oscuro.avif'; // Asegúrate de usar la extensión correcta
+import fondoClaro from '../../assets/modo-claro3.jpg';
+import fondoOscuro from '../../assets/modo-oscuro2.avif'; // Asegúrate de usar la extensión correcta
 
 import AuthForm from '../../features/auth/components/AuthForm';
 import EmpresaTable from '../../features/empresas/components/EmpresaTable';
@@ -66,7 +66,7 @@ export default function Landing() {
                 backgroundImage: `url(${mode === 'dark' ? fondoOscuro : fondoClaro})`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
-                opacity: mode === 'dark' ? 0.15 : 0.25, // Opacidad ajustable
+                opacity: mode === 'dark' ? 0.10 : 0.20, // Opacidad ajustable
                 transition: 'background-image 0.5s ease-in-out, opacity 0.5s ease-in-out',
                 pointerEvents: 'none', // Para que no interfiera con los clics
             }} />

@@ -2,26 +2,36 @@ import os
 import numpy as np
 import pandas as pd
 import joblib
+import yfinance as yf
 
-from app.ml.arquitectura.v1_lstm import ModeloLSTM_v1
-from app.ml.arquitectura.v2_bidireccional import ModeloBidireccional_v2
-
+# 🛑 PARCHE CRÍTICO PARA EL SERVIDOR WEB (PYTHON 3.13) 🛑
 import torch
 import torch._dynamo
 torch._dynamo.config.suppress_errors = True
 torch._dynamo.disable()
+# --------------------------------------------------------
+
+from app.ml.arquitectura.v1_lstm import ModeloLSTM_v1
+from app.ml.arquitectura.v2_bidireccional import ModeloBidireccional_v2
+from app.ml.arquitectura.v3_dqn import ModeloDQN_v3
 
 class MLEngine:
     """Motor de Inferencia de Inteligencia Artificial para Mercado de Valores"""
     
-    DIAS_MEMORIA_IA = 90
-    FEATURES = ['Close', 'Volume', 'RSI', 'MACD', 'ATR', 'EMA20', 'EMA50']
+    DIAS_MEMORIA_IA = 25 # Memoria reducida para evitar ruido y adivinanzas a largo plazo
+    FEATURES = ['Close', 'Volume', 'RSI', 'MACD', 'ATR', 'EMA20', 'EMA50', 'BB_Upper', 'BB_Lower', 'Beta']
+
+    _market_returns = None # Caché global para reciclar el S&P 500 sin gastar internet
 
     def __init__(self, version="v1", model=None, scaler=None):
         self.version = version
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.scaler = scaler
         self.model = model
+        
+        # Descargar el mercado (S&P 500) una sola vez en la RAM si no existe
+        if MLEngine._market_returns is None:
+            MLEngine.inicializar_mercado()
         
         # Si no se pasan en memoria, los cargamos desde el disco duro
         if self.model is None or self.scaler is None:
@@ -30,6 +40,25 @@ class MLEngine:
     # ==========================================
     # MÉTODOS PRIVADOS (Lógica interna)
     # ==========================================
+
+    @classmethod
+    def inicializar_mercado(cls):
+        """Descarga el S&P 500 una sola vez en la RAM para calcular Betas"""
+        if cls._market_returns is None:
+            try:
+                market = yf.download('^GSPC', period="10y", progress=False)
+                market.index = pd.to_datetime(market.index).tz_localize(None) 
+                
+                # Manejar multi-index de versiones nuevas de yfinance
+                if isinstance(market.columns, pd.MultiIndex):
+                    close_col = market['Close'].iloc[:, 0] if isinstance(market['Close'], pd.DataFrame) else market['Close']
+                else:
+                    close_col = market['Close']
+                    
+                cls._market_returns = close_col.pct_change().dropna()
+            except Exception as e:
+                print(f"⚠️ Aviso: Error al obtener S&P 500 para Betas ({e}). Usando métrica neutral.")
+                cls._market_returns = pd.Series(dtype=float)
 
     def _inicializar_recursos(self):
         """Carga el Scaler y los pesos de la red neuronal (.pth) desde el disco duro"""
@@ -40,12 +69,14 @@ class MLEngine:
         if os.path.exists(model_path) and os.path.exists(scaler_path):
             self.scaler = joblib.load(scaler_path)
             
-            # Instanciar la arquitectura correcta
+            # Instanciar la arquitectura correcta según la versión
             if self.version == "v1":
                 self.model = ModeloLSTM_v1(len(self.FEATURES)).to(self.device)
-            else:
+            elif self.version == "v2":
                 self.model = ModeloBidireccional_v2(len(self.FEATURES)).to(self.device)
-            
+            elif self.version == "v3":
+                self.model = ModeloDQN_v3(len(self.FEATURES)).to(self.device)
+                
             # Cargar los pesos entrenados
             self.model.load_state_dict(torch.load(model_path, map_location=self.device, weights_only=True))
             self.model.eval() # Activar modo inferencia (congela Dropouts)
@@ -65,23 +96,6 @@ class MLEngine:
         dummy_array = np.zeros((1, len(self.FEATURES)))
         dummy_array[0, 0] = prediccion_cruda
         return self.scaler.inverse_transform(dummy_array)[0, 0]
-
-    def _generar_analisis_negocio(self, precio_actual, pred_real, rsi_actual):
-        """Aplica las reglas financieras para determinar el Score y la Recomendación"""
-        var_pct = ((pred_real - precio_actual) / precio_actual) * 100
-        
-        score = 0
-        if var_pct > 1.0: score += 1
-        elif var_pct < -1.0: score -= 1
-            
-        if rsi_actual < 40: score += 1 
-        elif rsi_actual > 60: score -= 1 
-            
-        if score >= 1: recomendacion = "ALCISTA"
-        elif score <= -1: recomendacion = "BAJISTA"
-        else: recomendacion = "MANTENER"
-
-        return float(var_pct), float(score), recomendacion
 
     # ==========================================
     # MÉTODOS PÚBLICOS (API de la clase)
@@ -111,38 +125,73 @@ class MLEngine:
         df['EMA20'] = close.ewm(span=20, adjust=False).mean()
         df['EMA50'] = close.ewm(span=50, adjust=False).mean()
         
+        # BANDAS DE BOLLINGER
+        sma20 = close.rolling(window=20).mean()
+        std20 = close.rolling(window=20).std()
+        df['BB_Upper'] = sma20 + (std20 * 2)
+        df['BB_Lower'] = sma20 - (std20 * 2)
+
+        # BETA (Riesgo contra el Mercado)
+        df.index = pd.to_datetime(df.index).tz_localize(None) 
+        df['Rendimiento'] = close.pct_change()
+        
+        if hasattr(MLEngine, '_market_returns') and not MLEngine._market_returns.empty:
+            ret_df = pd.DataFrame({'Stock': df['Rendimiento'], 'Market': MLEngine._market_returns}).dropna()
+            cov = ret_df['Stock'].rolling(window=60).cov(ret_df['Market'])
+            var = ret_df['Market'].rolling(window=60).var()
+            beta = cov / var
+            df['Beta'] = beta.reindex(df.index).bfill().ffill()
+        else:
+            df['Beta'] = 1.0 
+            
+        df.drop('Rendimiento', axis=1, inplace=True)
         return df.dropna()
 
     def predecir(self, df_ind):
-        """
-        Orquesta el flujo completo: preprocesamiento, inferencia y análisis de negocio.
-        Retorna el diccionario con la predicción final.
-        """
+        """Orquesta la inferencia dependiendo de la familia de IA (DQN vs LSTM)"""
         if self.model is None or self.scaler is None:
             return None
 
-        # 1. Preparación de datos
         x_test_tensor = self._preparar_tensor(df_ind)
         
-        # 2. Inferencia pura en la GPU/CPU
         with torch.no_grad():
-            pred_tensor = self.model(x_test_tensor)
-            prediccion_cruda = pred_tensor.cpu().numpy()[0][0]
+            if self.version == "v3":
+                # --- LÓGICA AGENTE RL (DQN) ---
+                pred_reg_tensor, q_values_tensor = self.model(x_test_tensor)
+                prediccion_cruda = pred_reg_tensor.cpu().numpy()[0][0]
+                
+                accion_optima = torch.argmax(q_values_tensor).item() 
+                probabilidad_alcista = 0.5 # Valor visual neutro
+                
+                if accion_optima == 2:
+                    recomendacion = "ALCISTA"; score = 1; probabilidad_alcista = 0.85
+                elif accion_optima == 0:
+                    recomendacion = "BAJISTA"; score = -1; probabilidad_alcista = 0.15
+                else:
+                    recomendacion = "MANTENER"; score = 0
+            else:
+                # --- LÓGICA MULTI-TAREA SUPERVISADA (v1 y v2) ---
+                pred_reg_tensor, pred_clf_tensor = self.model(x_test_tensor)
+                prediccion_cruda = pred_reg_tensor.cpu().numpy()[0][0]
+                probabilidad_alcista = pred_clf_tensor.cpu().numpy()[0][0]
+                
+                if probabilidad_alcista > 0.65: 
+                    recomendacion = "ALCISTA"; score = 1
+                elif probabilidad_alcista < 0.35: 
+                    recomendacion = "BAJISTA"; score = -1
+                else: 
+                    recomendacion = "MANTENER"; score = 0
         
-        # 3. Post-procesamiento matemático
         pred_real = self._desescalar_prediccion(prediccion_cruda)
-        
-        # 4. Evaluación de reglas de negocio
         precio_actual = df_ind.iloc[-1]['Close']
-        rsi_actual = df_ind.iloc[-1]['RSI']
-        var_pct, score, recomendacion = self._generar_analisis_negocio(precio_actual, pred_real, rsi_actual)
+        var_pct = ((pred_real - precio_actual) / precio_actual) * 100
             
-        # 5. Formateo de respuesta
         return {
             "prediccion": float(pred_real),
-            "variacion": var_pct,
-            "score": score,
+            "variacion": float(var_pct),
+            "score": float(score),
             "recomendacion": recomendacion,
+            "prob_alcista": float(probabilidad_alcista),
             "modelo": self.version,              
             "features": df_ind.iloc[-1].to_dict() 
         }

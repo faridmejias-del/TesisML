@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 
 class ModeloBidireccional_v2(nn.Module):
@@ -5,18 +6,24 @@ class ModeloBidireccional_v2(nn.Module):
         super(ModeloBidireccional_v2, self).__init__()
         # bidirectional=True multiplica la salida por 2 (hacia adelante y atrás)
         self.lstm = nn.LSTM(input_size=num_features, hidden_size=32, batch_first=True, bidirectional=True)
-        self.dropout = nn.Dropout(0.2)
+        self.dropout = nn.Dropout(0.4)
         # La entrada a la capa lineal ahora es 64 (32 * 2)
         self.fc1 = nn.Linear(64, 16) 
         self.relu = nn.ReLU()
-        self.fc2 = nn.Linear(16, 1)
+
+        self.cabeza_regresion = nn.Linear(16,1)
+        self.cabeza_clasificacion = nn.Linear(16,1)
 
     def forward(self, x):
         lstm_out, _ = self.lstm(x)
         ultimo_dia = lstm_out[:, -1, :]
         x = self.dropout(ultimo_dia)
         x = self.relu(self.fc1(x))
-        return self.fc2(x)
+
+        precio_pred = self.cabeza_regresion(x)
+        dir_pred = torch.sigmoid(self.cabeza_clasificacion(x))
+
+        return precio_pred, dir_pred
 
 def obtener_modelo_v2(dias_pasados, num_features):
     return ModeloBidireccional_v2(num_features)

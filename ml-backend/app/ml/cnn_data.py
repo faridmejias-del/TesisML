@@ -59,10 +59,11 @@ def separar_train_validation(x_train: np.ndarray, y_reg: np.ndarray, y_clf: np.n
 
     x_entrenamiento = x_train[:split_idx]
     y_reg_entrenamiento = y_reg[:split_idx]
+    y_clf_entrenamiento = y_clf[:split_idx]  # ← Faltaba esta línea
     x_validacion = torch.tensor(x_train[split_idx:], dtype=torch.float32)
     if device is not None:
         x_validacion = x_validacion.to(device)
 
     y_clf_validacion = y_clf[split_idx:]
 
-    return x_entrenamiento, y_reg_entrenamiento, x_validacion, y_clf_validacion
+    return x_entrenamiento, y_reg_entrenamiento, y_clf_entrenamiento, x_validacion, y_clf_validacion

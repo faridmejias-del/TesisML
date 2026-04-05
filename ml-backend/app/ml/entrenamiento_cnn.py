@@ -71,7 +71,7 @@ def entrenar_cnn_optimizado(
         print("⚠️ No se pudieron generar secuencias de entrenamiento.")
         return
 
-    x_entrenamiento, y_reg_entrenamiento, x_validacion, y_clf_validacion = separar_train_validation(
+    x_entrenamiento, y_reg_entrenamiento, y_clf_entrenamiento, x_validacion, y_clf_validacion = separar_train_validation(
         x_train, y_reg, y_clf, valid_ratio=0.1, device=device
     )
 
@@ -116,7 +116,10 @@ def entrenar_cnn_optimizado(
         modelo.eval()
 
         with Timer(f"Evaluación final de {modelo_db.Nombre}"):
-            metricas_finales = evaluar_cnn(modelo, x_validacion, y_reg_entrenamiento[-len(x_validacion):], y_clf_validacion, device)
+            # Extraer y_reg_validacion correspondiente
+            split_idx = int(0.9 * len(x_train))
+            y_reg_validacion = y_reg[split_idx:]
+            metricas_finales = evaluar_cnn(modelo, x_validacion, y_reg_validacion, y_clf_validacion, device)
 
         # Combinar métricas
         metricas = {

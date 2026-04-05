@@ -13,7 +13,7 @@ torch._dynamo.disable()
 
 from app.ml.arquitectura.v1_lstm import ModeloLSTM_v1
 from app.ml.arquitectura.v2_bidireccional import ModeloBidireccional_v2
-from app.ml.arquitectura.v3_dqn import ModeloDQN_v3
+from app.ml.arquitectura.v3_cnn import ModeloCNN_v3
 
 class MLEngine:
     """Motor de Inferencia de Inteligencia Artificial para Mercado de Valores"""
@@ -76,7 +76,7 @@ class MLEngine:
             elif self.version == "v2":
                 self.model = ModeloBidireccional_v2(len(self.FEATURES)).to(self.device)
             elif self.version == "v3":
-                self.model = ModeloDQN_v3(len(self.FEATURES)).to(self.device)
+                self.model = ModeloCNN_v3(len(self.FEATURES)).to(self.device)
                 
             # Cargar los pesos entrenados
             self.model.load_state_dict(torch.load(model_path, map_location=self.device, weights_only=True))
@@ -138,40 +138,23 @@ class MLEngine:
         return df.dropna()
 
     def predecir(self, df_ind):
-        """Orquesta la inferencia dependiendo de la familia de IA (DQN vs LSTM)"""
         if self.model is None or self.scaler is None:
             return None
 
         x_test_tensor = self._preparar_tensor(df_ind)
         
         with torch.no_grad():
-            if self.version == "v3":
-                # --- LÓGICA AGENTE RL (DQN) ---
-                pred_reg_tensor, q_values_tensor = self.model(x_test_tensor)
-                prediccion_cruda = pred_reg_tensor.cpu().numpy()[0][0]
-                
-                accion_optima = torch.argmax(q_values_tensor).item() 
-                probabilidad_alcista = 0.5 # Valor visual neutro
-                
-                if accion_optima == 2:
-                    recomendacion = "ALCISTA"; score = 1; probabilidad_alcista = 0.85
-                elif accion_optima == 0:
-                    recomendacion = "BAJISTA"; score = -1; probabilidad_alcista = 0.15
-                else:
-                    recomendacion = "MANTENER"; score = 0
-            else:
-                # --- LÓGICA MULTI-TAREA SUPERVISADA (v1 y v2) ---
-                pred_reg_tensor, pred_clf_tensor = self.model(x_test_tensor)
-                prediccion_cruda = pred_reg_tensor.cpu().numpy()[0][0]
-                # Aplicar sigmoid a los logits para obtener probabilidades
-                probabilidad_alcista = torch.sigmoid(pred_clf_tensor).cpu().numpy()[0][0]
-                
-                if probabilidad_alcista > 0.65: 
-                    recomendacion = "ALCISTA"; score = 1
-                elif probabilidad_alcista < 0.35: 
-                    recomendacion = "BAJISTA"; score = -1
-                else: 
-                    recomendacion = "MANTENER"; score = 0
+            # ¡Lógica unificada! Los 3 modelos (v1, v2 y v3) hacen exactamente lo mismo
+            pred_reg_tensor, pred_clf_tensor = self.model(x_test_tensor)
+            prediccion_cruda = pred_reg_tensor.cpu().numpy()[0][0]
+            probabilidad_alcista = pred_clf_tensor.cpu().numpy()[0][0]
+            
+            if probabilidad_alcista > 0.65: 
+                recomendacion = "ALCISTA"; score = 1
+            elif probabilidad_alcista < 0.35: 
+                recomendacion = "BAJISTA"; score = -1
+            else: 
+                recomendacion = "MANTENER"; score = 0
         
         pred_real = self._desescalar_prediccion(prediccion_cruda)
         precio_actual = df_ind.iloc[-1]['Close']

@@ -1,6 +1,6 @@
 """
-Módulo de datos para entrenamiento RL
-Contiene funciones para cargar empresas, construir el entorno y preparar datos.
+Módulo de datos para entrenamiento CNN supervisado
+Contiene funciones para cargar empresas, construir el dataset y preparar datos.
 """
 import concurrent.futures
 import torch
@@ -15,8 +15,8 @@ from app.models.modelo_ia import ModeloIA
 from app.ml.data_processing import extraer_y_procesar_empresa, preparar_datos_masivos
 
 
-def cargar_empresas_y_modelos_rl(id_modelo_especifico: int = None):
-    """Carga empresas activas y modelos RL (version v3) desde la base de datos."""
+def cargar_empresas_y_modelos_cnn(id_modelo_especifico: int = None):
+    """Carga empresas activas y modelos CNN (version v3) desde la base de datos."""
     db = SessionLocal()
     try:
         empresas = db.query(Empresa).filter(Empresa.Activo == True).all()
@@ -33,7 +33,7 @@ def cargar_empresas_y_modelos_rl(id_modelo_especifico: int = None):
 
 
 def construir_entorno_empresas(ids_empresas: List[int], max_workers: int = 10) -> List[pd.DataFrame]:
-    """Construye el entorno virtual extrayendo y procesando datos para cada empresa."""
+    """Construye el dataset extrayendo y procesando datos para cada empresa."""
     if not ids_empresas:
         return []
 
@@ -41,14 +41,14 @@ def construir_entorno_empresas(ids_empresas: List[int], max_workers: int = 10) -
         resultados = list(tqdm(
             executor.map(extraer_y_procesar_empresa, ids_empresas),
             total=len(ids_empresas),
-            desc="Construyendo Entorno"
+            desc="Construyendo Dataset"
         ))
 
     return [df for df in resultados if df is not None]
 
 
-def preparar_datos_rl(lista_dfs: List[pd.DataFrame]):
-    """Prepara los datos de entrenamiento RL reutilizando la pipeline estándar."""
+def preparar_datos_cnn(lista_dfs: List[pd.DataFrame]):
+    """Prepara los datos de entrenamiento CNN reutilizando la pipeline estándar."""
     return preparar_datos_masivos(lista_dfs)
 
 

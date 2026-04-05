@@ -21,15 +21,15 @@ from app.models.modelo_ia import ModeloIA
 from app.ml.engine import MLEngine
 from app.ml.arquitectura.v1_lstm import obtener_modelo_v1
 from app.ml.arquitectura.v2_bidireccional import obtener_modelo_v2
+from app.ml.arquitectura.v3_cnn import obtener_modelo_v3
 from app.ml.data_processing import procesar_empresas_en_lotes, preparar_datos_masivos, crear_dataloaders
 from app.ml.model_training import ejecutar_entrenamiento_pytorch, calcular_metricas_clasificacion
 from app.ml.utils import Timer
-from app.ml.entrenamiento_rl import entrenar_agente_rl
-
 # Mapa de arquitecturas disponibles
 MAPA_ARQUITECTURAS = {
     "v1": obtener_modelo_v1,
     "v2": obtener_modelo_v2,
+    "v3": obtener_modelo_v3
 }
 
 
@@ -94,10 +94,11 @@ def entrenar_y_guardar_optimizado(id_modelo_especifico: int = None, batch_empres
     for modelo_db in modelos_activos:
         print(f"\n🚀 Entrenando {modelo_db.Nombre} (v{modelo_db.Version})...")
 
-        # Delegar modelos v3 a entrenamiento RL
+        # Delegar modelos v3 a entrenamiento CNN supervisado
         if modelo_db.Version == "v3":
-            print(f"🔄 Delegando modelo v3 a pipeline RL...")
-            entrenar_agente_rl(modelo_db.IdModelo)
+            print(f"🔄 Delegando modelo v3 a pipeline CNN supervisada...")
+            from app.ml.entrenamiento_cnn import entrenar_cnn_optimizado
+            entrenar_cnn_optimizado(modelo_db.IdModelo)
             continue
 
         funcion_arquitectura = MAPA_ARQUITECTURAS.get(modelo_db.Version)

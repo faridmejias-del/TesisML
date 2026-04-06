@@ -19,7 +19,10 @@ class MLEngine:
     
     DIAS_MEMORIA_IA = 25 
     DIAS_PREDICCION = 5 # 👈 VARIABLE GLOBAL: Días a predecir hacia el futuro
-    FEATURES = ['Close', 'Volume', 'RSI', 'MACD', 'ATR', 'EMA20', 'EMA50', 'BB_Upper', 'BB_Lower']
+    FEATURES = [
+        'Close', 'Volume', 'RSI', 'MACD', 'ATR', 'EMA20', 'EMA50',
+        'BB_Upper', 'BB_Lower', 'LogReturn', 'EMA20_diff', 'EMA50_diff', 'BB_pct'
+    ]
 
     def __init__(self, version="v1", model=None, scaler=None):
         self.version = version
@@ -57,10 +60,8 @@ class MLEngine:
         x_test = np.array([scaled_data[-self.DIAS_MEMORIA_IA:, :]])
         return torch.tensor(x_test, dtype=torch.float32).to(self.device)
 
-    def _desescalar_prediccion(self, prediccion_cruda):
-        dummy_array = np.zeros((1, len(self.FEATURES)))
-        dummy_array[0, 0] = prediccion_cruda
-        return self.scaler.inverse_transform(dummy_array)[0, 0]
+    def _desescalar_prediccion(self, prediccion_cruda, precio_actual):
+        return float(precio_actual * np.exp(prediccion_cruda))
 
     @staticmethod
     def calcular_indicadores(df):
@@ -90,6 +91,11 @@ class MLEngine:
         df['BB_Upper'] = sma20 + (std20 * 2)
         df['BB_Lower'] = sma20 - (std20 * 2)
         
+        df['LogReturn'] = np.log(close / close.shift(1))
+        df['EMA20_diff'] = (close / df['EMA20']) - 1
+        df['EMA50_diff'] = (close / df['EMA50']) - 1
+        df['BB_pct'] = (close - sma20) / std20
+        
         return df.dropna()
 
     def predecir(self, df_ind):
@@ -97,6 +103,7 @@ class MLEngine:
 
         x_test_tensor = self._preparar_tensor(df_ind)
         
+        precio_actual = df_ind.iloc[-1]['Close']
         with torch.no_grad():
             pred_reg_tensor, pred_clf_tensor = self.model(x_test_tensor)
             prediccion_cruda = pred_reg_tensor.cpu().numpy()[0][0]
@@ -111,8 +118,7 @@ class MLEngine:
             else: 
                 recomendacion = "MANTENER"; score = 0
         
-        pred_real = self._desescalar_prediccion(prediccion_cruda)
-        precio_actual = df_ind.iloc[-1]['Close']
+        pred_real = self._desescalar_prediccion(prediccion_cruda, precio_actual)
         var_pct = ((pred_real - precio_actual) / precio_actual) * 100
             
         return {

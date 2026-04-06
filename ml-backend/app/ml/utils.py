@@ -31,15 +31,15 @@ def monitorear_recursos() -> Dict[str, Any]:
 
 
 def imprimir_estadisticas_entrenamiento(info_recursos: Dict[str, Any], epoch: int,
-                                      loss: float, val_loss: float, tiempo_epoch: float = None):
+                                        loss: float, val_loss: float, tiempo_epoch: float = None):
     """Imprime estadisticas detalladas del entrenamiento"""
     print(f"Epoch {epoch}: Loss={loss:.4f}, Val={val_loss:.4f}")
     print(f"CPU: {info_recursos.get('cpu_percent', '?'):.1f}% | "
-          f"RAM: {info_recursos.get('memoria_usada_gb', '?'):.1f}/{info_recursos.get('memoria_total_gb', '?'):.1f}GB")
+            f"RAM: {info_recursos.get('memoria_usada_gb', '?'):.1f}/{info_recursos.get('memoria_total_gb', '?'):.1f}GB")
 
     if 'gpu_mem_allocated' in info_recursos:
         print(f"GPU: {info_recursos['gpu_mem_allocated']:.2f}GB allocated, "
-              f"{info_recursos['gpu_mem_reserved']:.2f}GB reserved")
+                f"{info_recursos['gpu_mem_reserved']:.2f}GB reserved")
 
     if tiempo_epoch:
         print(f"Tiempo epoch: {tiempo_epoch:.2f}s")

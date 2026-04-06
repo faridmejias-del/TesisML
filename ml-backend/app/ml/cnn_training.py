@@ -54,8 +54,8 @@ def entrenar_cnn_supervisado(modelo: nn.Module,
             num_batches += 1
 
         loop_tiempo = tqdm(range(num_batches),
-                          desc=f"Epoch [{epoch+1}/{epochs}]",
-                          leave=False)
+                            desc=f"Epoch [{epoch+1}/{epochs}]",
+                            leave=False)
 
         for batch_idx in loop_tiempo:
             start_idx = batch_idx * batch_size

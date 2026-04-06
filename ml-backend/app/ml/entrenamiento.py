@@ -74,16 +74,19 @@ def entrenar_y_guardar_optimizado(id_modelo_especifico: int = None, batch_empres
 
     # Preparar datos de entrenamiento
     print("⚖️ Preparando datos de entrenamiento...")
-    x_train, y_reg, y_clf, scaler = preparar_datos_masivos_optimizado(todos_los_datos)
+    x_train, y_reg, y_clf, x_val, y_reg_val, y_clf_val, scaler = preparar_datos_masivos_optimizado(todos_los_datos)
 
     if x_train is None or len(x_train) == 0:
         print("⚠️ No se pudieron preparar datos de entrenamiento")
         return
+    if x_val is None or len(x_val) == 0:
+        print("⚠️ No se pudieron preparar datos de validación; revisa la cantidad de datos o el split temporal")
+        return
 
-    print(f"🎯 Dataset final: {len(x_train)} secuencias de entrenamiento")
+    print(f"🎯 Dataset final: {len(x_train)} secuencias de entrenamiento, {len(x_val)} validación")
 
     # Crear DataLoaders optimizados
-    train_loader, val_loader, x_tensor, y_clf_tensor, split_idx = crear_dataloaders_optimizados(x_train, y_reg, y_clf)
+    train_loader, val_loader = crear_dataloaders_optimizados(x_train, y_reg, y_clf, x_val, y_reg_val, y_clf_val)
 
     # Entrenar cada modelo
     for modelo_db in modelos_activos:
@@ -113,7 +116,7 @@ def entrenar_y_guardar_optimizado(id_modelo_especifico: int = None, batch_empres
         model.eval()
 
         with Timer("Cálculo de métricas"):
-            metricas = calcular_metricas_clasificacion(model, x_tensor, y_clf_tensor, split_idx, historial, device)
+            metricas = calcular_metricas_clasificacion(model, val_loader, device)
 
         # Guardar métricas en BD
         db_local = SessionLocal()

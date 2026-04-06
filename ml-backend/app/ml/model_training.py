@@ -96,40 +96,57 @@ def ejecutar_entrenamiento_pytorch_optimizado(model, train_loader, val_loader, d
             
     return historial, early_stopping.mejores_pesos
 
-def calcular_metricas_clasificacion(model, x_tensor, y_clf_tensor, split_idx, historial, device):
-    x_val_final = x_tensor[split_idx:]
-    y_val_real = y_clf_tensor[split_idx:].numpy()
-    
-    y_val_pred_list = []
-    lote_evaluacion = 128 
-    
+def calcular_metricas_clasificacion(model, val_loader, device):
+    y_val_real = []
+    y_val_pred = []
+    val_mae = 0.0
+    lote_evaluacion = 128
+    criterion_mae = nn.L1Loss()
+
     model.eval()
     with torch.no_grad():
-        for i in range(0, len(x_val_final), lote_evaluacion):
-            x_batch = x_val_final[i:i+lote_evaluacion].to(device)
+        for x_val, y_reg_val, y_clf_val in val_loader:
+            x_val = x_val.to(device, non_blocking=True)
+            y_clf_val = y_clf_val.to(device, non_blocking=True)
+
             with torch.amp.autocast(device.type):
-                _, logits_clf = model(x_batch)
-                # 👈 Calculamos la sigmoide manual para sacar la métrica de porcentaje
+                _, logits_clf = model(x_val)
                 pred_clf = torch.sigmoid(logits_clf)
-            y_val_pred_list.append(pred_clf.cpu().numpy())
 
-    probabilidades = np.vstack(y_val_pred_list)
-    direccion_pred = (probabilidades > 0.5).astype(int)
+            val_mae += float(criterion_mae(pred_clf, y_clf_val))
+            y_val_real.extend(y_clf_val.cpu().numpy().reshape(-1))
+            y_val_pred.extend(pred_clf.cpu().numpy().reshape(-1))
 
-    acc = accuracy_score(y_val_real, direccion_pred)
-    prec = precision_score(y_val_real, direccion_pred, zero_division=0)
-    rec = recall_score(y_val_real, direccion_pred, zero_division=0)
-    f1 = f1_score(y_val_real, direccion_pred, zero_division=0)
+    if len(y_val_real) == 0:
+        return {
+            'loss': 0.0,
+            'mae': 0.0,
+            'val_loss': 0.0,
+            'val_mae': 0.0,
+            'accuracy': 0.0,
+            'precision': 0.0,
+            'recall': 0.0,
+            'f1_score': 0.0,
+            'DiasFuturo': MLEngine.DIAS_PREDICCION
+        }
 
-    mejor_idx = np.argmin(historial['val_loss'])
+    y_val_pred_binary = (np.array(y_val_pred) > 0.5).astype(int)
+
+    acc = accuracy_score(y_val_real, y_val_pred_binary)
+    prec = precision_score(y_val_real, y_val_pred_binary, zero_division=0)
+    rec = recall_score(y_val_real, y_val_pred_binary, zero_division=0)
+    f1 = f1_score(y_val_real, y_val_pred_binary, zero_division=0)
+
+    val_mae /= len(val_loader)
+
     return {
-        'loss': float(historial['loss'][mejor_idx]),
-        'mae': float(historial['mae'][mejor_idx]),
-        'val_loss': float(historial['val_loss'][mejor_idx]),
-        'val_mae': float(historial['val_mae'][mejor_idx]),
+        'loss': 0.0,
+        'mae': 0.0,
+        'val_loss': 0.0,
+        'val_mae': float(val_mae),
         'accuracy': float(acc),
         'precision': float(prec),
         'recall': float(rec),
         'f1_score': float(f1),
-        'DiasFuturo': MLEngine.DIAS_PREDICCION # 👈 Guardamos los días usados en la BD
+        'DiasFuturo': MLEngine.DIAS_PREDICCION
     }

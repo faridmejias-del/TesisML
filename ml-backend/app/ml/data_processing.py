@@ -57,52 +57,83 @@ def extraer_y_procesar_empresa(id_empresa: int) -> Optional[pd.DataFrame]:
         db_thread.close()
 
 def preparar_datos_masivos_optimizado(lista_dfs: List[pd.DataFrame], batch_size: int = 1000) -> Tuple[Optional[np.ndarray], ...]:
-    if not lista_dfs: return None, None, None, None
+    if not lista_dfs: return None, None, None, None, None, None, None
 
     print(f"Procesando {len(lista_dfs)} empresas con {sum(len(df) for df in lista_dfs)} registros totales...")
     scaler = RobustScaler() # 👈 Evita errores extremos en ValLoss
 
     muestras_scaler = []
-    for df in lista_dfs[:min(10, len(lista_dfs))]:  
+    for df in lista_dfs[:min(10, len(lista_dfs))]:
         if len(df) > MLEngine.DIAS_MEMORIA_IA:
-            muestras_scaler.append(df[MLEngine.FEATURES].values[:100])  
+            muestras_scaler.append(df[MLEngine.FEATURES].values[:100])
 
-    if muestras_scaler: scaler.fit(np.vstack(muestras_scaler))
+    if muestras_scaler:
+        scaler.fit(np.vstack(muestras_scaler))
 
     x_train_global, y_train_reg, y_train_clf = [], [], []
-    dias_futuro = MLEngine.DIAS_PREDICCION # 👈 Consumimos la variable global
+    x_val_global, y_val_reg, y_val_clf = [], [], []
+    dias_futuro = MLEngine.DIAS_PREDICCION
 
     for i in range(0, len(lista_dfs), batch_size):
         batch_dfs = lista_dfs[i:i+batch_size]
 
         for df in batch_dfs:
-            if len(df) <= MLEngine.DIAS_MEMORIA_IA + dias_futuro: continue
+            if len(df) <= MLEngine.DIAS_MEMORIA_IA + dias_futuro:
+                continue
+
             scaled_data = scaler.transform(df[MLEngine.FEATURES].values)
+            raw_close = df['Close'].values
+            split_boundary = max(int(len(df) * 0.9), MLEngine.DIAS_MEMORIA_IA + dias_futuro)
 
             for j in range(MLEngine.DIAS_MEMORIA_IA, len(scaled_data) - dias_futuro + 1):
-                x_train_global.append(scaled_data[j-MLEngine.DIAS_MEMORIA_IA:j, :])
-                precio_hoy = scaled_data[j-1, 0] 
-                precio_futuro = scaled_data[j + dias_futuro - 1, 0] 
-                
-                y_train_reg.append(precio_futuro)
-                y_train_clf.append(1.0 if precio_futuro > precio_hoy else 0.0) 
+                close_actual = raw_close[j - 1]
+                close_futuro = raw_close[j + dias_futuro - 1]
+                if close_actual <= 0 or close_futuro <= 0:
+                    continue
+
+                retorno_log = np.log(close_futuro / close_actual)
+                x_seq = scaled_data[j - MLEngine.DIAS_MEMORIA_IA:j, :]
+                etiqueta_clf = 1.0 if retorno_log > 0 else 0.0
+
+                if (j + dias_futuro - 1) < split_boundary:
+                    x_train_global.append(x_seq)
+                    y_train_reg.append(retorno_log)
+                    y_train_clf.append(etiqueta_clf)
+                else:
+                    x_val_global.append(x_seq)
+                    y_val_reg.append(retorno_log)
+                    y_val_clf.append(etiqueta_clf)
 
         del batch_dfs
         gc.collect()
 
-    return (np.array(x_train_global, dtype=np.float32), np.array(y_train_reg, dtype=np.float32),
-            np.array(y_train_clf, dtype=np.float32), scaler)
+    return (
+        np.array(x_train_global, dtype=np.float32),
+        np.array(y_train_reg, dtype=np.float32),
+        np.array(y_train_clf, dtype=np.float32),
+        np.array(x_val_global, dtype=np.float32),
+        np.array(y_val_reg, dtype=np.float32),
+        np.array(y_val_clf, dtype=np.float32),
+        scaler
+    )
 
-def crear_dataloaders_optimizados(x_train: np.ndarray, y_reg: np.ndarray, y_clf: np.ndarray) -> Tuple[DataLoader, DataLoader, torch.Tensor, torch.Tensor, int]:
-    x_tensor = torch.tensor(x_train, dtype=torch.float32)
-    y_reg_tensor = torch.tensor(y_reg, dtype=torch.float32).view(-1, 1)
-    y_clf_tensor = torch.tensor(y_clf, dtype=torch.float32).view(-1, 1)
-    
-    split_idx = int(0.9 * len(x_tensor))
-    train_dataset = TensorDataset(x_tensor[:split_idx], y_reg_tensor[:split_idx], y_clf_tensor[:split_idx])
-    val_dataset = TensorDataset(x_tensor[split_idx:], y_reg_tensor[split_idx:], y_clf_tensor[split_idx:])
-    
+
+def crear_dataloaders_optimizados(
+    x_train: np.ndarray, y_reg_train: np.ndarray, y_clf_train: np.ndarray,
+    x_val: np.ndarray, y_reg_val: np.ndarray, y_clf_val: np.ndarray
+) -> Tuple[DataLoader, DataLoader]:
+    x_train_tensor = torch.tensor(x_train, dtype=torch.float32)
+    y_reg_train_tensor = torch.tensor(y_reg_train, dtype=torch.float32).view(-1, 1)
+    y_clf_train_tensor = torch.tensor(y_clf_train, dtype=torch.float32).view(-1, 1)
+
+    x_val_tensor = torch.tensor(x_val, dtype=torch.float32)
+    y_reg_val_tensor = torch.tensor(y_reg_val, dtype=torch.float32).view(-1, 1)
+    y_clf_val_tensor = torch.tensor(y_clf_val, dtype=torch.float32).view(-1, 1)
+
+    train_dataset = TensorDataset(x_train_tensor, y_reg_train_tensor, y_clf_train_tensor)
+    val_dataset = TensorDataset(x_val_tensor, y_reg_val_tensor, y_clf_val_tensor)
+
     train_loader = DataLoader(train_dataset, batch_size=128, shuffle=True, pin_memory=True, num_workers=0)
     val_loader = DataLoader(val_dataset, batch_size=128, shuffle=False, pin_memory=True)
-    
-    return train_loader, val_loader, x_tensor, y_clf_tensor, split_idx
+
+    return train_loader, val_loader

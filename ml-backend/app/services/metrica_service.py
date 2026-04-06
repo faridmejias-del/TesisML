@@ -17,6 +17,7 @@ class MetricaService:
                 Precision = float(metricas_dict.get('precision', 0.0)),
                 Recall = float(metricas_dict.get('recall', 0.0)),
                 F1_Score = float(metricas_dict.get('f1_score', 0.0)),
+                DiasFuturo = int(metricas_dict.get('DiasFuturo', 0)),
                 FechaEntrenamiento = obtener_hora_formateada()
             )
             db.add(nueva_metrica)

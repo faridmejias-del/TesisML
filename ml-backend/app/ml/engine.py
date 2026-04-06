@@ -17,8 +17,8 @@ from app.ml.arquitectura.v3_cnn import ModeloCNN_v3
 class MLEngine:
     """Motor de Inferencia de Inteligencia Artificial para Mercado de Valores"""
     
-    DIAS_MEMORIA_IA = 25 
-    DIAS_PREDICCION = 5 # 👈 VARIABLE GLOBAL: Días a predecir hacia el futuro
+    DIAS_MEMORIA_IA = 25 #VARIABLE GLOBAL: Dias de memoria que la IA utiliza 
+    DIAS_PREDICCION = 5 #VARIABLE GLOBAL: Días a predecir hacia el futuro
     FEATURES = [
         'Close', 'Volume', 'RSI', 'MACD', 'ATR', 'EMA20', 'EMA50',
         'BB_Upper', 'BB_Lower', 'LogReturn', 'EMA20_diff', 'EMA50_diff', 'BB_pct'
@@ -108,7 +108,7 @@ class MLEngine:
             pred_reg_tensor, pred_clf_tensor = self.model(x_test_tensor)
             prediccion_cruda = pred_reg_tensor.cpu().numpy()[0][0]
             
-            # 👈 APLICAMOS LA SIGMOIDE MANUALMENTE PARA OBTENER PORCENTAJE
+            #APLICAMOS LA SIGMOIDE MANUALMENTE PARA OBTENER PORCENTAJE
             probabilidad_alcista = torch.sigmoid(pred_clf_tensor).cpu().numpy()[0][0]
             
             if probabilidad_alcista > 0.65: 

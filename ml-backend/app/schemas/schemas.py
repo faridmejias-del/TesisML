@@ -227,6 +227,7 @@ class ModeloIAOut(BaseModel):
     Version: str = Field(..., description="Version del modelo")
     Descripcion: Optional[str] = Field(None, description="Descripcion breve del modelo")
     Hiperparametros: Optional[dict] = Field(..., description="Configuracion del modelo")
+    Activo: bool = Field(..., description="Indica si el modelo está habilitado")
 
     model_config = {"from_attributes": True}
 

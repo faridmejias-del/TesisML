@@ -230,6 +230,15 @@ class ModeloIAOut(BaseModel):
 
     model_config = {"from_attributes": True}
 
+class ModeloIAUpdate(BaseModel):
+    Nombre: Optional[str] = Field(None, description="Nombre del modelo")
+    Version: Optional[str] = Field(None, description="Version del modelo")
+    Descripcion: Optional[str] = Field(None, description="Descripcion breve del modelo")
+    Hiperparametros: Optional[dict] = Field(None, description="Configuracion del modelo")
+    Activo: Optional[bool] = Field(None, description="Estado activo o inactivo del modelo")
+
+    model_config = {"from_attributes": True}
+
 class MetricasBase(BaseModel):
     Loss: Optional[float] = Field(None, description="Valor de pérdida (loss) del modelo")
     MAE: Optional[float] = Field(None, description="Error absoluto medio (MAE) del modelo")

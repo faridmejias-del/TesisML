@@ -73,14 +73,15 @@ class MLEngine:
     def _preparar_tensor(self, df_ind):
         data = df_ind[self.FEATURES].values
         scaled_data = self.scaler.transform(data)
-        x_test = np.array([scaled_data[-self.DIAS_MEMORIA_IA:, :]])
-        return torch.tensor(x_test, dtype=torch.float32).to(self.device)
+        x_test = np.array([scaled_data[-self.DIAS_MEMORIA_IA:, :]], order='C')  # Orden C-contiguous
+        # Tensor contiguous es crítico para cuDNN
+        return torch.tensor(x_test, dtype=torch.float32).to(self.device).contiguous()
 
     def _desescalar_prediccion(self, prediccion_cruda, precio_actual):
         return float(precio_actual * np.exp(prediccion_cruda))
 
     @staticmethod
-    #Aqui se agregan las nueva FEATURES, SIMPRE AL FINAL
+    #Aqui se agregan las nueva FEATURES 
     def calcular_indicadores(df):
         df = df.copy() 
         
@@ -148,19 +149,25 @@ class MLEngine:
         df['Wick_Lower'] = np.minimum(close, apertura) - low
         df['High_Low_Range'] = high - low
 
-        # ---------------------------------------------------------
+# ---------------------------------------------------------
         # 5. FUERZA Y TENDENCIA ALTERNATIVAS
         # ---------------------------------------------------------
-        # ADX Simulado (Average Directional Index) - Aproximación simplificada
-        up_move = high - high.shift(1)
+        # ADX Simulado (Average Directional Index) - Aproximación segura con Pandas
+        up_move = high.diff()
         down_move = low.shift(1) - low
-        plus_dm = np.where((up_move > down_move) & (up_move > 0), up_move, 0)
-        minus_dm = np.where((down_move > up_move) & (down_move > 0), down_move, 0)
         
-        plus_di = 100 * (pd.Series(plus_dm).ewm(alpha=1/14, adjust=False).mean() / df['ATR'].replace(0,1))
-        minus_di = 100 * (pd.Series(minus_dm).ewm(alpha=1/14, adjust=False).mean() / df['ATR'].replace(0,1))
+        # Usamos .clip(lower=0) en vez de np.where para mantener los índices intactos
+        plus_dm = up_move.where((up_move > down_move) & (up_move > 0), 0.0)
+        minus_dm = down_move.where((down_move > up_move) & (down_move > 0), 0.0)
+        
+        # Usamos .ewm directamente sobre las series de Pandas
+        plus_di = 100 * (plus_dm.ewm(alpha=1/14, adjust=False).mean() / df['ATR'].replace(0, 1))
+        minus_di = 100 * (minus_dm.ewm(alpha=1/14, adjust=False).mean() / df['ATR'].replace(0, 1))
+        
         dx = 100 * abs(plus_di - minus_di) / (plus_di + minus_di).replace(0, 1)
-        df['ADX'] = pd.Series(dx).ewm(alpha=1/14, adjust=False).mean().values
+        
+        # Asignación segura manteniendo el index del DataFrame
+        df['ADX'] = dx.ewm(alpha=1/14, adjust=False).mean()
 
         # Oscilador Estocástico
         low14 = low.rolling(window=14).min()
@@ -172,17 +179,17 @@ class MLEngine:
         # 6. VARIABLES TEMPORALES Y ESTACIONALIDAD
         # ---------------------------------------------------------
         # Si el índice es DateTime, extraemos datos. Si no, intentamos convertir la columna Fecha.
-        if not isinstance(df.index, pd.DatetimeIndex):
-            if 'Fecha' in df.columns:
-                fechas = pd.to_datetime(df['Fecha'])
-            else:
-                fechas = pd.Series(pd.Timestamp.now(), index=df.index) # Fallback de seguridad
+        if isinstance(df.index, pd.DatetimeIndex):
+            fechas = df.index.to_series()  # Convertir a Series para consistencia
+        elif 'Fecha' in df.columns:
+            fechas = pd.to_datetime(df['Fecha'], errors='coerce')  # Manejar errores de conversión
         else:
-            fechas = df.index
+            fechas = pd.Series(pd.Timestamp.now(), index=df.index) # Fallback de seguridad
 
-        df['DayOfWeek'] = fechas.dayofweek # 0=Lunes, 6=Domingo
-        df['HourOfDay'] = fechas.hour      # Útil si usas datos Intradía
-        df['Is_Month_End'] = fechas.is_month_end.astype(int) # Fenómeno "Window Dressing"
+        # Extraer componentes temporales de manera segura
+        df['DayOfWeek'] = fechas.dt.dayofweek.fillna(0).astype(int)  # 0=Lunes, 6=Domingo, default 0
+        df['HourOfDay'] = fechas.dt.hour.fillna(12).astype(int)      # Default mediodía si no hay hora
+        df['Is_Month_End'] = fechas.dt.is_month_end.fillna(False).astype(int) # Default False
 
         # ---------------------------------------------------------
         # 7. REZAGOS (Memoria a Corto Plazo)
@@ -192,11 +199,13 @@ class MLEngine:
         df['LogReturn_Lag3'] = df['LogReturn'].shift(3)
 
         # ---------------------------------------------------------
-        # LIMPIEZA FINAL
+        # LIMPIEZA FINAL - Más conservadora para evitar pérdida de datos
         # ---------------------------------------------------------
-        # Reemplazamos infinitos generados por divisiones extrañas por NaN, y luego borramos los NaN
-        df.replace([np.inf, -np.inf], np.nan, inplace=True)
-        return df.dropna()
+        # Solo eliminamos filas donde TODOS los valores sean NaN, no solo alguna columna
+        df_clean = df.dropna(how='all')  # Más conservador que dropna() sin parámetros
+        # Rellenamos NaN restantes con valores forward/backward fill o 0
+        df_clean = df_clean.ffill().bfill().fillna(0)  # Pandas moderno: ffill() y bfill() en lugar de method='ffill'/'bfill'
+        return df_clean
 
     def predecir(self, df_ind):
         if self.model is None or self.scaler is None: return None

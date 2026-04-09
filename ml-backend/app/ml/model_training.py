@@ -42,7 +42,7 @@ def ejecutar_entrenamiento_pytorch_optimizado(model, train_loader, val_loader, d
         loop_entrenamiento = tqdm(train_loader, desc=f"Epoch [{epoch+1}/{epochs}]", leave=False, unit="batch")
         
         for x_batch, y_reg_batch, y_clf_batch in loop_entrenamiento:
-            x_batch = x_batch.to(device, non_blocking=True)
+            x_batch = x_batch.to(device, non_blocking=True).contiguous()  # Asegurar contigüidad para cuDNN
             y_reg_batch = y_reg_batch.to(device, non_blocking=True)
             y_clf_batch = y_clf_batch.to(device, non_blocking=True)
             
@@ -70,7 +70,7 @@ def ejecutar_entrenamiento_pytorch_optimizado(model, train_loader, val_loader, d
         val_loss, val_mae = 0.0, 0.0
         with torch.no_grad():
             for x_val, y_reg_val, y_clf_val in val_loader:
-                x_val = x_val.to(device, non_blocking=True)
+                x_val = x_val.to(device, non_blocking=True).contiguous()  # Asegurar contigüidad para cuDNN
                 y_reg_val = y_reg_val.to(device, non_blocking=True)
                 y_clf_val = y_clf_val.to(device, non_blocking=True)
                 
@@ -93,6 +93,10 @@ def ejecutar_entrenamiento_pytorch_optimizado(model, train_loader, val_loader, d
         
         early_stopping(val_loss, model)
         if early_stopping.detener: break
+        
+        # Limpiar caché de GPU después de cada epoch para evitar fragmentación de memoria
+        if device.type == 'cuda':
+            torch.cuda.empty_cache()
             
     return historial, early_stopping.mejores_pesos
 
@@ -100,20 +104,29 @@ def calcular_metricas_clasificacion(model, val_loader, device):
     y_val_real = []
     y_val_pred = []
     val_mae = 0.0
+    val_loss = 0.0
     lote_evaluacion = 128
     criterion_mae = nn.L1Loss()
+    criterion_reg = nn.HuberLoss(delta=1.0)
+    pesos_clases = torch.tensor([1.2]).to(device)
+    criterion_clf = nn.BCEWithLogitsLoss(pos_weight=pesos_clases)
 
     model.eval()
     with torch.no_grad():
         for x_val, y_reg_val, y_clf_val in val_loader:
-            x_val = x_val.to(device, non_blocking=True)
+            x_val = x_val.to(device, non_blocking=True).contiguous()  # Asegurar contigüidad para cuDNN
+            y_reg_val = y_reg_val.to(device, non_blocking=True)
             y_clf_val = y_clf_val.to(device, non_blocking=True)
 
             with torch.amp.autocast(device.type):
-                _, logits_clf = model(x_val)
+                pred_reg, logits_clf = model(x_val)
                 pred_clf = torch.sigmoid(logits_clf)
+                loss_reg = criterion_reg(pred_reg, y_reg_val)
+                loss_clf = criterion_clf(logits_clf, y_clf_val)
+                loss_total = loss_reg + loss_clf
 
-            val_mae += float(criterion_mae(pred_clf, y_clf_val))
+            val_loss += loss_total.item()
+            val_mae += float(criterion_mae(pred_reg, y_reg_val))
             y_val_real.extend(y_clf_val.cpu().numpy().reshape(-1))
             y_val_pred.extend(pred_clf.cpu().numpy().reshape(-1))
 
@@ -130,14 +143,15 @@ def calcular_metricas_clasificacion(model, val_loader, device):
             'DiasFuturo': MLEngine.DIAS_PREDICCION
         }
 
+    val_loss /= len(val_loader)
+    val_mae /= len(val_loader)
+
     y_val_pred_binary = (np.array(y_val_pred) > 0.5).astype(int)
 
     acc = accuracy_score(y_val_real, y_val_pred_binary)
     prec = precision_score(y_val_real, y_val_pred_binary, zero_division=0)
     rec = recall_score(y_val_real, y_val_pred_binary, zero_division=0)
     f1 = f1_score(y_val_real, y_val_pred_binary, zero_division=0)
-
-    val_mae /= len(val_loader)
 
     # Calcular AUC
     try:
@@ -159,9 +173,9 @@ def calcular_metricas_clasificacion(model, val_loader, device):
                 tn = cm[0][0]
 
     return {
-        'loss': 0.0,
-        'mae': 0.0,
-        'val_loss': 0.0,
+        'loss': float(val_loss),
+        'mae': float(val_mae),
+        'val_loss': float(val_loss),
         'val_mae': float(val_mae),
         'accuracy': float(acc),
         'precision': float(prec),

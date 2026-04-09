@@ -1,7 +1,8 @@
 // src/pages/Usuario/ProyeccionesIA/ProyeccionesIA.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../context/AuthContext'; 
 import { useProyeccionesIA } from '../../../features/portafolio/hooks/useProyeccionesIA';
+import iaService from '../../../services/iaService'; 
 import TarjetaProyeccion from '../../../features/ia_analisis/components/TarjetaProyeccion';
 import GraficoComparativo from '../../../features/ia_analisis/components/GraficoComparativo';
 import { Box, Typography, Paper, FormControl, InputLabel, Select, MenuItem, CircularProgress} from '@mui/material'; 
@@ -9,133 +10,150 @@ import PageHeader from '../../../components/PageHeader';
 import AreaChartIcon from '@mui/icons-material/AreaChart';
 
 const VistaProyecciones = () => {
-  const { usuario } = useAuth(); 
-  const idUsuarioFiltro = usuario?.id;
+    const { usuario } = useAuth(); 
+    const idUsuarioFiltro = usuario?.id;
 
-  // Extraemos la nueva propiedad 'sectores'
-  const { proyecciones, sectores, cargando, error } = useProyeccionesIA(idUsuarioFiltro);
+    // Estados
+    const [modelosActivos, setModelosActivos] = useState([]);
+    const [modeloSeleccionado, setModeloSeleccionado] = useState('');
+    const [cargandoModelos, setCargandoModelos] = useState(true); // <-- NUEVO ESTADO
+    
+    const [sectorSeleccionado, setSectorSeleccionado] = useState('');
+    const [empresasComparar, setEmpresasComparar] = useState([]);
+
+    // Cargar modelos de IA disponibles (Solo 1 vez al montar el componente)
+    useEffect(() => {
+        let montado = true;
+        const fetchModelos = async () => {
+            try {
+                const data = await iaService.obtenerModelosActivos();
+                if (montado) {
+                    setModelosActivos(data);
+                    // Si hay modelos, selecciona el primero por defecto
+                    if (data.length > 0) {
+                        setModeloSeleccionado(data[0].IdModelo);
+                    }
+                }
+            } catch (error) {
+                console.error("Error cargando modelos", error);
+            } finally {
+                // Independiente de si falla o acierta, apagamos la carga de modelos
+                if (montado) setCargandoModelos(false); 
+            }
+        };
+        fetchModelos();
+        return () => { montado = false; };
+    }, []); // <-- CORRECCIÓN: Array vacío para que no se re-dispare innecesariamente
+
+    // Extraemos las proyecciones pasándole el modelo seleccionado
+    const { proyecciones, sectores, cargando: cargandoProyecciones, error } = useProyeccionesIA(idUsuarioFiltro, modeloSeleccionado);
   
-  // Estados para las nuevas funcionalidades
-  const [sectorSeleccionado, setSectorSeleccionado] = useState('');
-  const [empresasComparar, setEmpresasComparar] = useState([]);
-
-    if (cargando) {
+    // CORRECCIÓN: El spinner se mantiene si CUALQUIERA de los dos está cargando
+    if (cargandoModelos || cargandoProyecciones) {
         return (
-            <Box display="flex" justifyContent="center" alignItems="center" p={6} gap={2} sx={{ width: '100%' }}>
-                <CircularProgress size={30} color="primary" />
+            <Box display="flex" flexDirection="column" justifyContent="center" alignItems="center" p={6} gap={2} sx={{ width: '100%', minHeight: '60vh' }}>
+                <CircularProgress size={40} color="primary" />
+                <Typography color="text.secondary" fontWeight="500">
+                    Sincronizando IA y Proyecciones...
+                </Typography>
             </Box>
         );
-}  if (error) return <div style={{ color: '#ef4444', textAlign: 'center', padding: '2rem' }}>{error}</div>;
+    }  
 
-  // Filtrado de las proyecciones a mostrar
-  const proyeccionesFiltradas = proyecciones.filter(p => 
-    sectorSeleccionado === '' || p.sector === sectorSeleccionado
-  );
+    if (error) return <div style={{ color: '#ef4444', textAlign: 'center', padding: '2rem' }}>{error}</div>;
 
-  // Lógica para seleccionar/deseleccionar empresas
-  const handleToggleComparar = (simbolo) => {
-    setEmpresasComparar(prev => 
-        prev.includes(simbolo) 
-            ? prev.filter(s => s !== simbolo) 
-            : [...prev, simbolo]
+    const proyeccionesFiltradas = proyecciones.filter(p => 
+        sectorSeleccionado === '' || p.sector === sectorSeleccionado
     );
-  };
 
-  const datosAComparar = proyecciones.filter(p => empresasComparar.includes(p.simbolo));
+    const handleToggleComparar = (simbolo) => {
+        setEmpresasComparar(prev => 
+            prev.includes(simbolo) ? prev.filter(s => s !== simbolo) : [...prev, simbolo]
+        );
+    };
 
-  return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%', maxWidth: '1400px', margin: '0 auto', pb: 4 }}>
+    const datosAComparar = proyecciones.filter(p => empresasComparar.includes(p.simbolo));
 
-        <PageHeader 
-            titulo="Análisis Predictivo de tu Portafolio"
-            subtitulo="Explora el directorio global, analiza el historial de precios y revisa las predicciones de la Inteligencia Artificial."
-            icono={AreaChartIcon} 
-        />
+    return (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%', maxWidth: '1400px', margin: '0 auto', pb: 4 }}>
+            <PageHeader 
+                titulo="Análisis Predictivo de tu Portafolio"
+                subtitulo="Explora el directorio global, analiza el historial de precios y revisa las predicciones de la Inteligencia Artificial."
+                icono={AreaChartIcon} 
+            />
 
-        {/* CONTROLES: Filtro por Sector */}
-        <Box sx={{ 
-            display: 'flex', 
-            // En móvil se centra (o se estira), en PC se va a la derecha
-            justifyContent: { xs: 'center', sm: 'flex-end' }, 
-            width: '100%' 
-        }}>
-            <FormControl 
-                sx={{ 
-                    // En móvil ocupa el 100% del ancho, en PC un mínimo de 250px
-                    width: { xs: '100%', sm: 250 } 
-                }} 
-                size="small"
-            >
-                <InputLabel id="filtro-sector-label">Filtrar por Sector</InputLabel>
-                <Select
-                    labelId="filtro-sector-label"
-                    value={sectorSeleccionado}
-                    label="Filtrar por Sector"
-                    onChange={(e) => setSectorSeleccionado(e.target.value)}
-                >
-                    <MenuItem value=""><em>Todos los sectores</em></MenuItem>
-                    {sectores.map(sector => (
-                        <MenuItem key={sector} value={sector}>{sector}</MenuItem>
-                    ))}
-                </Select>
-            </FormControl>
-        </Box>
-
-        {/* GRÁFICO COMPARATIVO: Se muestra solo si hay 2 o más empresas seleccionadas */}
-        {empresasComparar.length >= 2 && (
-            <Paper sx={{ 
-                p: { xs: 2, sm: 4 }, // FIX: Padding reducido en móvil para dar espacio al gráfico
-                border: '1px solid', 
-                borderColor: 'divider' // FIX: Se adapta automáticamente al modo claro/oscuro
-            }}>
-                <Typography 
-                    variant="h6" 
-                    fontWeight="bold" 
-                    gutterBottom 
-                    color="primary.main"
-                    sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }} // FIX: Texto un poco más pequeño en móvil
-                >
-                    Comparativa de Proyecciones ({empresasComparar.join(' vs ')})
-                </Typography>
+            {/* CONTROLES: Filtro Modelo IA y Sector */}
+            <Box sx={{ display: 'flex', gap: 2, justifyContent: { xs: 'center', sm: 'flex-end' }, flexWrap: 'wrap', width: '100%' }}>
                 
-                {/* Contenedor extra por seguridad, ayuda a que el gráfico no desborde si falla el ResponsiveContainer */}
-                <Box sx={{ width: '100%', overflowX: 'hidden' }}>
-                    <GraficoComparativo datos={datosAComparar} />
-                </Box>
-            </Paper>
-        )}
-      
-        {proyecciones.length === 0 && !cargando && (
-            <Box sx={{ 
-                textAlign: 'center', 
-                p: { xs: 3, sm: 5 }, // FIX: Padding adaptativo
-                bgcolor: 'background.default', 
-                borderRadius: 2 
-            }}>
-                <Typography 
-                    variant="h6" 
-                    color="text.secondary"
-                    sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }} // FIX: Evita que el texto gigante rompa la pantalla en celular
-                >
-                    No se encontraron empresas activas en tu portafolio.
-                </Typography>
-            </Box>
-        )}
+                {/* SELECTOR MODELO IA */}
+                {modelosActivos.length > 0 && (
+                    <FormControl sx={{ width: { xs: '100%', sm: 250 } }} size="small">
+                        <InputLabel id="filtro-modelo-label">Modelo Predictivo</InputLabel>
+                        <Select
+                            labelId="filtro-modelo-label"
+                            value={modeloSeleccionado}
+                            label="Modelo Predictivo"
+                            onChange={(e) => setModeloSeleccionado(e.target.value)}
+                        >
+                            {modelosActivos.map(modelo => (
+                                <MenuItem key={modelo.IdModelo} value={modelo.IdModelo}>
+                                    {modelo.Nombre}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+                )}
 
-        {/* LISTADO DE TARJETAS */}
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 450px), 1fr))', gap: 3 }}>
-            {proyeccionesFiltradas.map((empresaData, index) => (
-                <TarjetaProyeccion 
-                    key={index} 
-                    datos={empresaData} 
-                    // Nuevas propiedades:
-                    seleccionado={empresasComparar.includes(empresaData.simbolo)}
-                    onToggle={() => handleToggleComparar(empresaData.simbolo)}
-                />
-            ))}
+                {/* SELECTOR SECTOR */}
+                <FormControl sx={{ width: { xs: '100%', sm: 250 } }} size="small">
+                    <InputLabel id="filtro-sector-label">Filtrar por Sector</InputLabel>
+                    <Select
+                        labelId="filtro-sector-label"
+                        value={sectorSeleccionado}
+                        label="Filtrar por Sector"
+                        onChange={(e) => setSectorSeleccionado(e.target.value)}
+                    >
+                        <MenuItem value=""><em>Todos los sectores</em></MenuItem>
+                        {sectores.map(sector => (
+                            <MenuItem key={sector} value={sector}>{sector}</MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+            </Box>
+
+            {/* Gráfico Comparativo */}
+            {empresasComparar.length >= 2 && (
+                <Paper sx={{ p: { xs: 2, sm: 4 }, border: '1px solid', borderColor: 'divider' }}>
+                    <Typography variant="h6" fontWeight="bold" gutterBottom color="primary.main" sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
+                        Comparativa de Proyecciones ({empresasComparar.join(' vs ')})
+                    </Typography>
+                    <Box sx={{ width: '100%', overflowX: 'hidden' }}>
+                        <GraficoComparativo datos={datosAComparar} />
+                    </Box>
+                </Paper>
+            )}
+          
+            {proyecciones.length === 0 && (
+                <Box sx={{ textAlign: 'center', p: { xs: 3, sm: 5 }, bgcolor: 'background.default', borderRadius: 2 }}>
+                    <Typography variant="h6" color="text.secondary" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                        No se encontraron empresas activas en tu portafolio.
+                    </Typography>
+                </Box>
+            )}
+
+            {/* Listado Tarjetas */}
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 450px), 1fr))', gap: 3 }}>
+                {proyeccionesFiltradas.map((empresaData, index) => (
+                    <TarjetaProyeccion 
+                        key={index} 
+                        datos={empresaData} 
+                        seleccionado={empresasComparar.includes(empresaData.simbolo)}
+                        onToggle={() => handleToggleComparar(empresaData.simbolo)}
+                    />
+                ))}
+            </Box>
         </Box>
-    </Box>
-  );
+    );
 };
 
 export default VistaProyecciones;

@@ -20,50 +20,65 @@ export const usePrecioHistorico = (empresaId) => {
     const datosFiltrados = useMemo(() => {
         if (!datosOriginales || !datosOriginales.length) return [];
 
-        const formatearParaGrafica = (item, tipoCorta = true) => {
+        // 1. Limpieza estricta de datos (Remover NaNs que rompen Recharts y parsear Fechas)
+        let datosLimpios = datosOriginales.map(item => {
             let fechaObj;
-            try {
-                if (item.Fecha instanceof Date) fechaObj = item.Fecha;
-                else if (typeof item.Fecha === 'string') fechaObj = new Date(item.Fecha.replace(' ', 'T').split('.')[0]);
-                else if (typeof item.Fecha === 'number') fechaObj = new Date(item.Fecha);
-
-                if (!fechaObj || isNaN(fechaObj.getTime())) fechaObj = new Date(item.Fecha);
-                if (isNaN(fechaObj.getTime())) return { ...item, fechaValida: null, FechaCorta: 'Err', FechaLarga: 'Err' };
-
-                return {
-                    ...item,
-                    fechaValida: fechaObj,
-                    FechaCorta: tipoCorta 
-                        ? fechaObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
-                        : fechaObj.toLocaleDateString('es-ES'),
-                    // NUEVO: Creamos una fecha siempre completa para el Tooltip
-                    FechaLarga: fechaObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
-                };
-            } catch (e) {
-                return { ...item, fechaValida: null, FechaCorta: 'Err', FechaLarga: 'Err' };
+            if (item.Fecha instanceof Date) {
+                fechaObj = item.Fecha;
+            } else if (typeof item.Fecha === 'string') {
+                fechaObj = new Date(item.Fecha.replace(' ', 'T').split('.')[0]);
+            } else {
+                fechaObj = new Date(item.Fecha);
             }
-        };
 
-        const datosProcesados = datosOriginales.map(d => formatearParaGrafica(d, rango !== 'TODO'));
-        datosProcesados.sort((a, b) => (a.fechaValida && b.fechaValida ? a.fechaValida.getTime() - b.fechaValida.getTime() : 0));
+            const precio = parseFloat(item.PrecioCierre);
+
+            return {
+                ...item,
+                fechaValida: isNaN(fechaObj.getTime()) ? null : fechaObj,
+                PrecioCierre: isNaN(precio) ? null : precio // Si es NaN, guardamos null para que Recharts no colapse
+            };
+        }).filter(d => d.fechaValida !== null && d.PrecioCierre !== null);
+
+        // 2. Ordenar cronológicamente
+        datosLimpios.sort((a, b) => a.fechaValida.getTime() - b.fechaValida.getTime());
         
-        if (rango === 'TODO') return datosProcesados;
+        if (datosLimpios.length === 0) return [];
 
-        const datosConFecha = datosProcesados.filter(d => d.fechaValida);
-        if (!datosConFecha.length) return [];
+        // 3. Aplicar Filtro de Tiempo
+        let datosRecortados = datosLimpios;
+        if (rango !== 'TODO') {
+            const ultimaFecha = datosLimpios[datosLimpios.length - 1].fechaValida;
+            const fechaLimite = new Date(ultimaFecha.getTime());
 
-        const ultimaFecha = datosConFecha[datosConFecha.length - 1].fechaValida;
-        const fechaLimite = new Date(ultimaFecha.getTime());
+            if (rango === '1D') fechaLimite.setDate(fechaLimite.getDate() - 1);
+            else if (rango === '5D') fechaLimite.setDate(fechaLimite.getDate() - 5);
+            else if (rango === '1M') fechaLimite.setMonth(fechaLimite.getMonth() - 1);
+            else if (rango === '6M') fechaLimite.setMonth(fechaLimite.getMonth() - 6);
+            else if (rango === '1Y') fechaLimite.setFullYear(fechaLimite.getFullYear() - 1);
+            else if (rango === '5Y') fechaLimite.setFullYear(fechaLimite.getFullYear() - 5);
 
-        if (rango === '1D') fechaLimite.setDate(fechaLimite.getDate() - 1);
-        else if (rango === '5D') fechaLimite.setDate(fechaLimite.getDate() - 5);
-        else if (rango === '1M') fechaLimite.setMonth(fechaLimite.getMonth() - 1);
-        else if (rango === '6M') fechaLimite.setMonth(fechaLimite.getMonth() - 6);
-        else if (rango === '1Y') fechaLimite.setFullYear(fechaLimite.getFullYear() - 1);
-        else if (rango === '5Y') fechaLimite.setFullYear(fechaLimite.getFullYear() - 5);
+            datosRecortados = datosLimpios.filter(d => d.fechaValida >= fechaLimite);
+            
+            // Seguridad: Si el filtro recortó tanto que quedó vacío (ej. 1 día fin de semana), 
+            // devolvemos al menos los últimos 5 datos para que la gráfica no quede blanca.
+            if (datosRecortados.length === 0) {
+                datosRecortados = datosLimpios.slice(-5);
+            }
+        }
 
-        return datosProcesados.filter(d => d.fechaValida && d.fechaValida >= fechaLimite);
+        // 4. Formatear Fechas para la Gráfica (Dependiendo del Rango)
+        const tipoCorta = rango !== 'TODO';
+        
+        return datosRecortados.map(d => ({
+            ...d,
+            FechaCorta: tipoCorta 
+                ? d.fechaValida.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })
+                : d.fechaValida.toLocaleDateString('es-ES'),
+            FechaLarga: d.fechaValida.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
+        }));
+
     }, [datosOriginales, rango]);
 
     return { datosFiltrados, rango, cargando, handleCambioRango };
-}; 
+};

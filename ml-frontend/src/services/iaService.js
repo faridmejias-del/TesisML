@@ -18,11 +18,11 @@ const iaService = {
         const response = await api.get(`${MODELOS_URL}/activos`); // Cambiar axios por api
         return response.data;
     },
-    obtenerPrediccionEmpresa: async (empresaId) => {
-        const response = await api.get(`${API_URL}/prediccion/${empresaId}`);
+    obtenerPrediccionEmpresa: async (empresaId, modeloId = null) => {
+        const params = modeloId ? { modelo_id: modeloId } : {};
+        const response = await api.get(`${API_URL}/prediccion/${empresaId}`, { params });
         return response.data; 
-    }           
-    
+    }
 };
 
 export default iaService;

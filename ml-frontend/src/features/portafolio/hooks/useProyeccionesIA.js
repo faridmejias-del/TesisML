@@ -4,9 +4,9 @@ import iaService from '../../../services/iaService';
 import portafolioService from '../../../services/portafolioService';
 import empresaService from '../../../services/empresaService';
 
-export const useProyeccionesIA = (usuarioId) => {
+export const useProyeccionesIA = (usuarioId, modeloId = null) => {
     const [proyecciones, setProyecciones] = useState([]);
-    const [sectores, setSectores] = useState([]); // Nuevo estado para sectores
+    const [sectores, setSectores] = useState([]); 
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState(null);
 
@@ -18,7 +18,6 @@ export const useProyeccionesIA = (usuarioId) => {
 
         try {
             setCargando(true);
-            
             const [todosLosPortafolios, dataEmpresas] = await Promise.all([
                 portafolioService.obtenerTodos(),
                 empresaService.obtenerEmpresasConSectores() 
@@ -31,13 +30,13 @@ export const useProyeccionesIA = (usuarioId) => {
             const datosCompletos = await Promise.all(
                 misConexiones.map(async (item) => {
                     const infoEmpresa = dataEmpresas.empresas.find(e => e.IdEmpresa === item.IdEmpresa);
-                    const analisis = await iaService.obtenerPrediccionEmpresa(item.IdEmpresa);
+                    const analisis = await iaService.obtenerPrediccionEmpresa(item.IdEmpresa, modeloId);
                             
                     return {
                         idEmpresa: item.IdEmpresa,
                         empresa: infoEmpresa ? infoEmpresa.NombreEmpresa : `Empresa #${item.IdEmpresa}`,
                         simbolo: infoEmpresa ? infoEmpresa.Ticket : 'N/A',
-                        sector: infoEmpresa ? infoEmpresa.NombreSector : 'Sin Sector', // Extraemos el sector
+                        sector: infoEmpresa ? infoEmpresa.NombreSector : 'Sin Sector',
                         historial: analisis.historial,
                         prediccion: analisis.prediccion,
                         confianza: analisis.confianza || 0,
@@ -47,8 +46,6 @@ export const useProyeccionesIA = (usuarioId) => {
             );
 
             setProyecciones(datosCompletos);
-            
-            // Extraer y ordenar los sectores únicos
             const sectoresUnicos = [...new Set(datosCompletos.map(d => d.sector))].filter(Boolean).sort();
             setSectores(sectoresUnicos);
 
@@ -58,11 +55,11 @@ export const useProyeccionesIA = (usuarioId) => {
         } finally {
             setCargando(false);
         }
-    }, [usuarioId]); 
+    }, [usuarioId, modeloId]); 
 
     useEffect(() => {
         cargarDatos();
     }, [cargarDatos]);
 
-    return { proyecciones, sectores, cargando, error }; // Exportamos los sectores
+    return { proyecciones, sectores, cargando, error }; 
 };

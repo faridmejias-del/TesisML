@@ -8,6 +8,8 @@ import json
 import os
 import math
 import logging
+from pydantic import BaseModel
+from typing import List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -202,3 +204,32 @@ async def obtener_prediccion_empresa(
     except Exception as e:
         print(f"Error procesando prediccion para empresa {empresa_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error interno del servidor: {str(e)}")
+    
+class MasivoReq(BaseModel):
+    empresas_ids: List[int]
+    modelo_id: Optional[int] = None
+
+@router.post("/predicciones-masivas")
+async def obtener_predicciones_masivas(
+    req: MasivoReq,
+    db: Session = Depends(get_db)
+):
+    """
+    Obtiene las predicciones para múltiples empresas en una sola petición.
+    Optimiza el tiempo de carga del frontend (Soluciona el cuello de botella N+1).
+    """
+    resultado_masivo = {}
+    
+    for emp_id in req.empresas_ids:
+        try:
+            # Reutilizamos tu función existente mágicamente ✨
+            data = await obtener_prediccion_empresa(empresa_id=emp_id, modelo_id=req.modelo_id, db=db)
+            resultado_masivo[emp_id] = data
+        except Exception as e:
+            print(f"Error procesando empresa masiva {emp_id}: {str(e)}")
+            # Si una empresa falla, no rompemos el resto
+            resultado_masivo[emp_id] = {
+                "historial": [], "prediccion": [], "tendencia": "ESTABLE", "confianza": 0
+            }
+
+    return resultado_masivo

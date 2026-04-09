@@ -133,7 +133,7 @@ def crear_dataloaders_optimizados(
     train_dataset = TensorDataset(x_train_tensor, y_reg_train_tensor, y_clf_train_tensor)
     val_dataset = TensorDataset(x_val_tensor, y_reg_val_tensor, y_clf_val_tensor)
 
-    train_loader = DataLoader(train_dataset, batch_size=128, shuffle=True, pin_memory=True, num_workers=0)
-    val_loader = DataLoader(val_dataset, batch_size=128, shuffle=False, pin_memory=True)
+    train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True, pin_memory=True, num_workers=0)  # Reducido de 128 a 32 para evitar OOM
+    val_loader = DataLoader(val_dataset, batch_size=64, shuffle=False, pin_memory=True)  # Validación puede ser más grande
 
     return train_loader, val_loader

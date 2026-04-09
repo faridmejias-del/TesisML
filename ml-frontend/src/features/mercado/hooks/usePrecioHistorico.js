@@ -6,6 +6,7 @@ import { precioService } from '../../../services';
 export const usePrecioHistorico = (empresaId) => {
     const [rango, setRango] = useState('6M');
 
+    // Mantenemos la consulta a la API intacta
     const { data: datosOriginales, isLoading: cargando } = useQuery({
         queryKey: ['precios_historicos', empresaId],
         queryFn: () => precioService.getByEmpresa(empresaId),
@@ -14,56 +15,85 @@ export const usePrecioHistorico = (empresaId) => {
     });
 
     const handleCambioRango = (event, nuevoRango) => {
-        if (nuevoRango !== null) setRango(nuevoRango);
+        // Solo cambiamos si el usuario no hizo clic en el botón que ya estaba activo
+        if (nuevoRango !== null) {
+            setRango(nuevoRango);
+        }
     };
 
     const datosFiltrados = useMemo(() => {
         if (!datosOriginales || !datosOriginales.length) return [];
 
-        const formatearParaGrafica = (item, tipoCorta = true) => {
-            let fechaObj;
-            try {
-                if (item.Fecha instanceof Date) fechaObj = item.Fecha;
-                else if (typeof item.Fecha === 'string') fechaObj = new Date(item.Fecha.replace(' ', 'T').split('.')[0]);
-                else if (typeof item.Fecha === 'number') fechaObj = new Date(item.Fecha);
+        // 1. LIMPIEZA Y PARSEO ESTRÍCTO
+        let datosLimpios = datosOriginales.map(item => {
+            // Manejar distintos formatos de fecha que puede escupir el backend
+            let fechaStr = typeof item.Fecha === 'string' ? item.Fecha : String(item.Fecha);
+            // Reemplazar espacios por 'T' asegura compatibilidad en Safari/Firefox
+            fechaStr = fechaStr.replace(' ', 'T').split('.')[0]; 
+            const fechaObj = new Date(fechaStr);
+            
+            const precio = parseFloat(item.PrecioCierre);
 
-                if (!fechaObj || isNaN(fechaObj.getTime())) fechaObj = new Date(item.Fecha);
-                if (isNaN(fechaObj.getTime())) return { ...item, fechaValida: null, FechaCorta: 'Err', FechaLarga: 'Err' };
+            return {
+                ...item,
+                // Si la fecha es inválida, guardamos 0 temporalmente para filtrarla después
+                tiempoMs: isNaN(fechaObj.getTime()) ? 0 : fechaObj.getTime(),
+                fechaReal: fechaObj,
+                PrecioCierre: isNaN(precio) ? null : precio
+            };
+        }).filter(d => d.tiempoMs > 0 && d.PrecioCierre !== null);
 
-                return {
-                    ...item,
-                    fechaValida: fechaObj,
-                    FechaCorta: tipoCorta 
-                        ? fechaObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
-                        : fechaObj.toLocaleDateString('es-ES'),
-                    // NUEVO: Creamos una fecha siempre completa para el Tooltip
-                    FechaLarga: fechaObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
-                };
-            } catch (e) {
-                return { ...item, fechaValida: null, FechaCorta: 'Err', FechaLarga: 'Err' };
-            }
-        };
-
-        const datosProcesados = datosOriginales.map(d => formatearParaGrafica(d, rango !== 'TODO'));
-        datosProcesados.sort((a, b) => (a.fechaValida && b.fechaValida ? a.fechaValida.getTime() - b.fechaValida.getTime() : 0));
+        // 2. ORDENAR CRONOLÓGICAMENTE (Del más antiguo al más nuevo)
+        datosLimpios.sort((a, b) => a.tiempoMs - b.tiempoMs);
         
-        if (rango === 'TODO') return datosProcesados;
+        if (datosLimpios.length === 0) return [];
 
-        const datosConFecha = datosProcesados.filter(d => d.fechaValida);
-        if (!datosConFecha.length) return [];
+        // 3. APLICAR EL FILTRO DE TIEMPO
+        let datosRecortados = datosLimpios;
+        
+        if (rango !== 'TODO') {
+            // Buscamos la fecha más reciente (el último elemento tras ordenar)
+            const tiempoUltimoDato = datosLimpios[datosLimpios.length - 1].tiempoMs;
+            
+            // Constantes de tiempo en milisegundos
+            const unDiaMs = 24 * 60 * 60 * 1000;
+            let diasARestar = 0;
 
-        const ultimaFecha = datosConFecha[datosConFecha.length - 1].fechaValida;
-        const fechaLimite = new Date(ultimaFecha.getTime());
+            switch (rango) {
+                case '1D': diasARestar = 1; break;
+                case '5D': diasARestar = 5; break;
+                case '1M': diasARestar = 30; break;
+                case '6M': diasARestar = 180; break;
+                case '1Y': diasARestar = 365; break;
+                case '5Y': diasARestar = 1825; break;
+                default: diasARestar = 180;
+            }
 
-        if (rango === '1D') fechaLimite.setDate(fechaLimite.getDate() - 1);
-        else if (rango === '5D') fechaLimite.setDate(fechaLimite.getDate() - 5);
-        else if (rango === '1M') fechaLimite.setMonth(fechaLimite.getMonth() - 1);
-        else if (rango === '6M') fechaLimite.setMonth(fechaLimite.getMonth() - 6);
-        else if (rango === '1Y') fechaLimite.setFullYear(fechaLimite.getFullYear() - 1);
-        else if (rango === '5Y') fechaLimite.setFullYear(fechaLimite.getFullYear() - 5);
+            const tiempoLimite = tiempoUltimoDato - (diasARestar * unDiaMs);
+            
+            // Filtramos los datos que sean mayores o iguales a la fecha límite
+            datosRecortados = datosLimpios.filter(d => d.tiempoMs >= tiempoLimite);
+            
+            // Seguridad: Si el filtro recortó tanto que la gráfica quedaría en blanco, 
+            // devolvemos al menos los últimos 2 datos para trazar una línea.
+            if (datosRecortados.length < 2) {
+                datosRecortados = datosLimpios.slice(-2);
+            }
+        }
 
-        return datosProcesados.filter(d => d.fechaValida && d.fechaValida >= fechaLimite);
-    }, [datosOriginales, rango]);
+        // 4. FORMATEAR PARA RECHARTS
+        // Si el rango es de 1 o 5 días, mostramos la hora. Si es más largo, mostramos fecha.
+        const mostrarHora = rango === '1D' || rango === '5D';
+
+        return datosRecortados.map(d => ({
+            ...d,
+            FechaCorta: mostrarHora 
+                ? d.fechaReal.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+                : d.fechaReal.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }),
+            FechaLarga: d.fechaReal.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
+        }));
+
+    }, [datosOriginales, rango]); // Recalcula si cambian los datos o el usuario hace clic en el filtro
 
     return { datosFiltrados, rango, cargando, handleCambioRango };
-}; 
+};

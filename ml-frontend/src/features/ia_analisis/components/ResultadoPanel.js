@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Box, Paper, Typography, CircularProgress, Chip, Divider, Stack, FormControl, Select, MenuItem } from '@mui/material';
 import { useTheme } from '@mui/material/styles'; 
 import { useResultadoIA } from '../hooks/useResultadoIA';
-import api from '../../../services/api'; // Importamos tu instancia de axios
+import api from '../../../services/api'; 
 
 const MedidorRSI = ({ rsi }) => {
     const theme = useTheme(); 
@@ -53,29 +53,30 @@ const MedidorRSI = ({ rsi }) => {
 export default function ResultadoPanel({ empresaId }) {
     const [modelosActivos, setModelosActivos] = useState([]);
     const [modeloSeleccionado, setModeloSeleccionado] = useState('');
+    const [cargandoModelos, setCargandoModelos] = useState(true); // <-- ESTADO CLAVE
     
-    // El hook ahora reacciona a los cambios de modeloSeleccionado
-    const { resultado, cargando, recomendacionTexto, esCompra } = useResultadoIA(empresaId, modeloSeleccionado);
+    const { resultado, cargando: cargandoPrediccion, recomendacionTexto, esCompra } = useResultadoIA(empresaId, modeloSeleccionado);
 
     useEffect(() => {
         let montado = true;
         const fetchModelos = async () => {
             try {
-                // Remova o '/api/v1' daqui
                 const response = await api.get('/modelos-ia/activos');
                 if (montado) {
                     setModelosActivos(response.data);
-                    if (response.data.length > 0 && !modeloSeleccionado) {
+                    if (response.data.length > 0) {
                         setModeloSeleccionado(response.data[0].IdModelo);
                     }
                 }
             } catch (error) {
                 console.error("Error cargando modelos:", error);
+            } finally {
+                if (montado) setCargandoModelos(false);
             }
         };
         fetchModelos();
         return () => { montado = false; };
-    }, [modeloSeleccionado]);
+    }, []); // <-- Array vacío, solo se carga 1 vez
 
     if (!empresaId) {
         return (
@@ -91,13 +92,13 @@ export default function ResultadoPanel({ empresaId }) {
 
     return (
         <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1, height: '100%', overflowY: 'auto', border: '1px solid', borderColor: 'divider' }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, minHeight: '32px' }}>
                 <Typography variant="h6" component="h4" fontWeight="700" color="text.primary">
                     Análisis Explicativo
                 </Typography>
                 
-                {/* Selector de Modelos */}
-                {modelosActivos.length > 0 && (
+                {/* Selector de Modelos, solo se muestra si ya cargaron */}
+                {!cargandoModelos && modelosActivos.length > 0 && (
                     <FormControl size="small" sx={{ minWidth: 140 }}>
                         <Select
                             value={modeloSeleccionado}
@@ -114,10 +115,11 @@ export default function ResultadoPanel({ empresaId }) {
                 )}
             </Box>
             
-            {cargando ? (
-                <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+            {/* CONDICIÓN UNIFICADA DE CARGA */}
+            {cargandoModelos || cargandoPrediccion ? (
+                <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
                     <CircularProgress size={24} color="primary" />
-                    <Typography color="primary" fontWeight="500">
+                    <Typography color="text.secondary" fontWeight="500" fontSize="0.85rem">
                         Analizando parámetros...
                     </Typography>
                 </Box>

@@ -18,8 +18,7 @@ from app.ml.arquitectura.v3_cnn import ModeloCNN_v3
 from app.ml.cnn_data import (
     cargar_empresas_y_modelos_cnn,
     construir_entorno_empresas,
-    preparar_datos_cnn,
-    separar_train_validation,
+    preparar_datos_cnn
 )
 from app.ml.cnn_training import entrenar_cnn_supervisado, evaluar_cnn
 from app.ml.utils import Timer
@@ -60,15 +59,17 @@ def entrenar_cnn_optimizado(
     print(f"📈 Datos preparados: {len(lista_dfs)} empresas válidas")
 
     with Timer("Preparación de datos"):
-        x_train, y_reg, y_clf, scaler = preparar_datos_cnn(lista_dfs)
+            # 👇 AHORA RECIBIMOS LAS 7 VARIABLES EXACTAS
+            x_entrenamiento, y_reg_entrenamiento, y_clf_entrenamiento, \
+            x_validacion_np, y_reg_validacion, y_clf_validacion, \
+            scaler = preparar_datos_cnn(lista_dfs)
 
-    if x_train is None or len(x_train) == 0:
+    if x_entrenamiento is None or len(x_entrenamiento) == 0:
         print("⚠️ No se pudieron generar secuencias de entrenamiento.")
         return
 
-    x_entrenamiento, y_reg_entrenamiento, y_clf_entrenamiento, x_validacion, y_clf_validacion = separar_train_validation(
-        x_train, y_reg, y_clf, valid_ratio=0.1, device=device
-    )
+        # 👇 Convertimos la validación a tensor (antes lo hacía separar_train_validation)
+    x_validacion = torch.tensor(x_validacion_np, dtype=torch.float32).to(device)
 
     ruta_modelos = os.path.join(os.path.dirname(__file__), 'models')
     os.makedirs(ruta_modelos, exist_ok=True)
@@ -96,7 +97,7 @@ def entrenar_cnn_optimizado(
                 y_reg_entrenamiento=y_reg_entrenamiento,
                 y_clf_entrenamiento=y_clf_entrenamiento,
                 x_validacion=x_validacion,
-                y_reg_validacion=y_reg_entrenamiento[-len(x_validacion):],  # Usar datos de validación
+                y_reg_validacion=y_reg_validacion,  # Usar datos de validación
                 y_clf_validacion=y_clf_validacion,
                 device=device,
                 epochs=epochs,
@@ -112,9 +113,6 @@ def entrenar_cnn_optimizado(
         modelo.eval()
 
         with Timer(f"Evaluación final de {modelo_db.Nombre}"):
-            # Extraer y_reg_validacion correspondiente
-            split_idx = int(0.9 * len(x_train))
-            y_reg_validacion = y_reg[split_idx:]
             metricas_finales = evaluar_cnn(modelo, x_validacion, y_reg_validacion, y_clf_validacion, device)
 
         # Combinar métricas

@@ -1,34 +1,44 @@
 import torch
 import torch.nn as nn
 
-class ModeloLSTM_v1(nn.Module): # Mantenemos el nombre para no romper los imports
+class ModeloLSTM_v1(nn.Module):
     def __init__(self, num_features):
         super(ModeloLSTM_v1, self).__init__()
         
+        #Motor Temporal
         self.gru = nn.GRU(input_size=num_features, hidden_size=32, batch_first=True)
+        
+        #ESTABILIZADOR 1: Domina la salida de la GRU (32 neuronas)
+        self.bn1 = nn.BatchNorm1d(32) 
         self.dropout = nn.Dropout(0.4) 
-
-        self.batch_norm = nn.BatchNorm1d(32) #Capa de estabilizacion 
-
+        
+        # Capa de Razonamiento
         self.fc1 = nn.Linear(32, 16)
+        
+        #ESTABILIZADOR 2: Afina la decisión justo antes de predecir (16 neuronas)
+        self.bn2 = nn.BatchNorm1d(16)
         self.relu = nn.ReLU()
         
-        # --- RED MULTI-TAREA ---
+        #Cabezas Multi-Tarea
         self.cabeza_regresion = nn.Linear(16, 1)     
         self.cabeza_clasificacion = nn.Linear(16, 1) 
 
     def forward(self, x):
-        # La GRU procesa la secuencia temporal
         gru_out, _ = self.gru(x)
         
-        # Extraemos el último día de la secuencia
-        ultimo_dia = gru_out[:, -1, :] 
+        # Extraemos solo el último día de la secuencia
+        x = gru_out[:, -1, :] 
         
-        x = self.dropout(ultimo_dia)
-        x = self.relu(self.fc1(x))
+        # Aplicamos la estabilización matemática
+        x = self.bn1(x)
+        x = self.dropout(x)
+        
+        x = self.fc1(x)
+        x = self.bn2(x)
+        x = self.relu(x)
         
         precio_predicho = self.cabeza_regresion(x)
-        direccion_predicha = self.cabeza_clasificacion(x) # Sin sigmoide
+        direccion_predicha = self.cabeza_clasificacion(x) 
         
         return precio_predicho, direccion_predicha
 

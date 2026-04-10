@@ -1,33 +1,43 @@
 import torch
 import torch.nn as nn
 
-#multiplica por 2 (32 * 2 = 64)
 class ModeloBidireccional_v2(nn.Module):
     def __init__(self, num_features):
         super(ModeloBidireccional_v2, self).__init__()
         
+        #Motor Temporal Bidireccional
         self.gru = nn.GRU(input_size=num_features, hidden_size=32, batch_first=True, bidirectional=True)
+        
+        #ESTABILIZADOR 1: Es 64 porque (32 neuronas de ida + 32 de vuelta = 64)
+        self.bn1 = nn.BatchNorm1d(64)
         self.dropout = nn.Dropout(0.4)
         
-        self.batch_norm = nn.BatchNorm1d(64) #Capa de estabilizacion 
-        
-        # Como es bidireccional, el hidden_size se multiplica por 2 (32 * 2 = 64)
+        #Capa de Razonamiento
         self.fc1 = nn.Linear(64, 16) 
+        
+        #ESTABILIZADOR 2
+        self.bn2 = nn.BatchNorm1d(16)
         self.relu = nn.ReLU()
         
-        # --- RED MULTI-TAREA ---
+        #Cabezas Multi-Tarea
         self.cabeza_regresion = nn.Linear(16, 1)
         self.cabeza_clasificacion = nn.Linear(16, 1)
 
     def forward(self, x):
         gru_out, _ = self.gru(x)
-        ultimo_dia = gru_out[:, -1, :]
         
-        x = self.dropout(ultimo_dia)
-        x = self.relu(self.fc1(x))
+        x = gru_out[:, -1, :]
+        
+        # Aplicamos la estabilización
+        x = self.bn1(x)
+        x = self.dropout(x)
+        
+        x = self.fc1(x)
+        x = self.bn2(x)
+        x = self.relu(x)
         
         precio_predicho = self.cabeza_regresion(x)
-        direccion_predicha = self.cabeza_clasificacion(x) # Sin sigmoide
+        direccion_predicha = self.cabeza_clasificacion(x)
         
         return precio_predicho, direccion_predicha
 

@@ -25,7 +25,7 @@ class EarlyStopping:
             self.contador = 0
 
 def ejecutar_entrenamiento_pytorch_optimizado(model, train_loader, val_loader, device, epochs=25):
-    criterion_reg = nn.HuberLoss(delta=1.0)
+    criterion_reg = nn.HuberLoss(delta=0.05)
     
     # 👇 CAMBIO 1: Eliminamos el pos_weight para evitar el Mode Collapse
     criterion_clf = nn.BCEWithLogitsLoss()
@@ -140,7 +140,7 @@ def calcular_metricas_clasificacion(model, val_loader, device):
     val_mae = 0.0
     val_loss = 0.0
     criterion_mae = nn.L1Loss()
-    criterion_reg = nn.HuberLoss(delta=1.0)
+    criterion_reg = nn.HuberLoss(delta=0.05)
     
     # También eliminamos el sesgo al calcular la métrica de validación final
     criterion_clf = nn.BCEWithLogitsLoss()

@@ -83,31 +83,27 @@ def preparar_datos_masivos_optimizado(lista_dfs: List[pd.DataFrame], batch_size:
         batch_dfs = lista_dfs[i:i+batch_size]
 
         for df in batch_dfs:
-            if len(df) <= MLEngine.DIAS_MEMORIA_IA + dias_futuro:
-                continue
-
+            if len(df) <= MLEngine.DIAS_MEMORIA_IA + dias_futuro: continue
+            
+            # 👇 EXTRAEMOS LOS PRECIOS CRUDOS REALES PARA CALCULAR EL PORCENTAJE EXACTO
+            close_raw = df['Close'].values 
             scaled_data = scaler.transform(df[MLEngine.FEATURES].values)
-            raw_close = df['Close'].values
-            split_boundary = max(int(len(df) * 0.9), MLEngine.DIAS_MEMORIA_IA + dias_futuro)
 
             for j in range(MLEngine.DIAS_MEMORIA_IA, len(scaled_data) - dias_futuro + 1):
-                close_actual = raw_close[j - 1]
-                close_futuro = raw_close[j + dias_futuro - 1]
-                if close_actual <= 0 or close_futuro <= 0:
-                    continue
-
-                retorno_log = np.log(close_futuro / close_actual)
-                x_seq = scaled_data[j - MLEngine.DIAS_MEMORIA_IA:j, :]
-                etiqueta_clf = 1.0 if retorno_log > 0 else 0.0
-
-                if (j + dias_futuro - 1) < split_boundary:
-                    x_train_global.append(x_seq)
-                    y_train_reg.append(retorno_log)
-                    y_train_clf.append(etiqueta_clf)
-                else:
-                    x_val_global.append(x_seq)
-                    y_val_reg.append(retorno_log)
-                    y_val_clf.append(etiqueta_clf)
+                x_train_global.append(scaled_data[j-MLEngine.DIAS_MEMORIA_IA:j, :])
+                
+                # Precios Reales (sin escalar)
+                precio_hoy = close_raw[j-1] 
+                precio_futuro = close_raw[j + dias_futuro - 1] 
+                
+                # 👇 1. ARREGLO DE REGRESIÓN: Calculamos el Retorno Logarítmico real
+                log_return = np.log(precio_futuro / precio_hoy)
+                y_train_reg.append(log_return)
+                
+                # 👇 2. FILTRO INSTITUCIONAL DE RUIDO (Umbral)
+                # Solo consideramos 'Alcista' si la acción sube más de un 0.8% (0.008)
+                # Esto obliga a la IA a buscar patrones de tendencias fuertes, ignorando días planos.
+                y_train_clf.append(1.0 if log_return > 0.008 else 0.0) 
 
         del batch_dfs
         gc.collect()

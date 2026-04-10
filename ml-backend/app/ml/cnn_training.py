@@ -34,7 +34,7 @@ def entrenar_cnn_supervisado(modelo: nn.Module,
     scaler = GradScaler()
 
     # Pérdidas: Huber para regresión, BCEWithLogits para clasificación (seguro con autocast)
-    criterio_reg = nn.HuberLoss(delta=1.0)
+    criterio_reg = nn.HuberLoss(delta=0.05)
     criterio_clf = nn.BCEWithLogitsLoss()
 
     mejor_loss_val = float('inf')

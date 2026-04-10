@@ -38,7 +38,7 @@ const AdminTareas = () => {
                 </Box>
                 
                 {/* Selector para entrenar modelos */}
-                <Box sx={{ mt: { xs: 3, sm: 6 }, display: 'flex', justifyContent: 'center' }}>
+                <Box sx={{ display: 'flex', justifyContent: 'center' }}>
                     <EntrenamientoSelector />
                 </Box>
             </Box>

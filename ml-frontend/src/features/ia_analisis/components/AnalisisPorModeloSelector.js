@@ -1,6 +1,6 @@
 // src/features/ia_analisis/components/AnalisisPorModeloSelector.js
 import React, { useState, useEffect } from 'react';
-import { Box, Button, CircularProgress, FormControl, InputLabel, MenuItem, Select, Typography } from '@mui/material';
+import { Box, Button, CircularProgress, FormControl, InputLabel, MenuItem, Select } from '@mui/material';
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 import api from '../../../services/api';
 import iaService from '../../../services/iaService';
@@ -39,43 +39,48 @@ export default function AnalisisPorModeloSelector() {
 
     return (
         <Box sx={{ 
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, 
-            p: 3, mt: 3, border: '1px dashed', borderColor: 'divider', borderRadius: 2, 
-            bgcolor: 'background.paper', width: '100%', maxWidth: '500px' 
+            display: 'flex', 
+            flexDirection: { xs: 'column', sm: 'row' }, 
+            alignItems: 'center', 
+            justifyContent: 'space-between',
+            gap: 2, 
+            bgcolor: 'background.default', 
+            p: 2, 
+            borderRadius: 3, 
+            border: '1px solid', 
+            borderColor: 'divider',
+            width: '100%',
+            maxWidth: '600px',
+            mx: 'auto',
+            mb: 2 // Margen inferior para separarlo del siguiente
         }}>
-            <Typography variant="subtitle1" fontWeight="bold" color="text.secondary">
-                Ejecutar Predicciones por Modelo
-            </Typography>
-            
-            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center', width: '100%' }}>
-                <FormControl sx={{ minWidth: 200, flexGrow: 1 }}>
-                    <InputLabel id="select-modelo-label">Seleccionar IA</InputLabel>
-                    <Select
-                        labelId="select-modelo-label"
-                        value={modeloSeleccionado}
-                        label="Seleccionar IA"
-                        onChange={(e) => setModeloSeleccionado(e.target.value)}
-                        disabled={ejecutando}
-                    >
-                        {modelos.map((m) => (
-                            <MenuItem key={m.IdModelo} value={m.IdModelo}>
-                                {m.Nombre} (v{m.Version})
-                            </MenuItem>
-                        ))}
-                    </Select>
-                </FormControl>
-                
-                <Button
-                    variant="contained"
-                    color="primary"
-                    startIcon={ejecutando ? <CircularProgress size={20} color="inherit" /> : <PlayCircleOutlineIcon />}
-                    onClick={handleEjecutar}
-                    disabled={!modeloSeleccionado || ejecutando}
-                    sx={{ height: '56px' }} // Para que coincida con la altura del Select
+            <FormControl size="small" sx={{ width: { xs: '100%', sm: 'auto' }, flexGrow: 1 }}>
+                <InputLabel id="select-modelo-ejecutar-label">Ejecutar Modelo Específico</InputLabel>
+                <Select
+                    labelId="select-modelo-ejecutar-label"
+                    value={modeloSeleccionado}
+                    label="Ejecutar Modelo Específico"
+                    onChange={(e) => setModeloSeleccionado(e.target.value)}
+                    disabled={ejecutando}
                 >
-                    Ejecutar
-                </Button>
-            </Box>
+                    {modelos.map((m) => (
+                        <MenuItem key={m.IdModelo} value={m.IdModelo}>
+                            {m.Nombre} (v{m.Version})
+                        </MenuItem>
+                    ))}
+                </Select>
+            </FormControl>
+            
+            <Button
+                variant="contained"
+                color="primary" // Usamos primary para mantener concordancia con la ejecución
+                startIcon={ejecutando ? <CircularProgress size={20} color="inherit" /> : <PlayCircleOutlineIcon />}
+                onClick={handleEjecutar}
+                disabled={!modeloSeleccionado || ejecutando}
+                sx={{ width: { xs: '100%', sm: 'auto' }, minWidth: '220px' }}
+            >
+                {ejecutando ? 'Ejecutando...' : 'Ejecutar Seleccionado'}
+            </Button>
         </Box>
     );
 }

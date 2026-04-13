@@ -1,13 +1,23 @@
 // src/features/mercado/components/PrecioChart.js
-import React, { memo } from 'react';
-import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
-import { Box, Typography, ToggleButton, ToggleButtonGroup, CircularProgress } from '@mui/material';
+import React, { memo, useState } from 'react';
+// Cambiamos AreaChart por ComposedChart e incluimos Line
+import { 
+    XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
+    ComposedChart, Area, Line, Legend 
+} from 'recharts';
+import { 
+    Box, Typography, ToggleButton, ToggleButtonGroup, 
+    CircularProgress, Switch, FormControlLabel 
+} from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { usePrecioHistorico } from '../hooks/usePrecioHistorico';
 
 function PrecioChart({ empresaId, nombreEmpresa }) {
     const theme = useTheme();
     const { datosFiltrados, rango, cargando, handleCambioRango } = usePrecioHistorico(empresaId);
+    
+    // Estado local para mostrar u ocultar los indicadores técnicos
+    const [verBollinger, setVerBollinger] = useState(false);
 
     const botonesRango = [
         { label: '1 día', v: '1D' }, { label: '5 días', v: '5D' },
@@ -19,105 +29,152 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%' }}>
             
-            {/* CABECERA */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: { xs: 'wrap', md: 'nowrap' }, gap: 2, mb: 2 }}>
-                <Typography variant="h6" component="h4" fontWeight="bold" color="text.primary">
-                    Historial de Precios{nombreEmpresa ? `: ${nombreEmpresa}` : ''}
-                </Typography>
-                
-                {empresaId && !cargando && (
-                    <Box sx={{ width: { xs: '100%', md: 'auto' }, overflowX: 'auto', pb: 0.5, scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } }}>
-                        <ToggleButtonGroup 
-                            value={rango} 
-                            exclusive 
-                            onChange={handleCambioRango} 
-                            size="small" 
-                            color="primary"
-                            sx={{ display: 'flex', width: 'max-content' }} 
-                        >
-                            {botonesRango.map(btn => (
-                                <ToggleButton 
-                                    key={btn.v} 
-                                    value={btn.v} 
-                                    sx={{ 
-                                        textTransform: 'none', 
-                                        fontSize: '0.75rem', 
-                                        fontWeight: rango === btn.v ? 'bold' : 'normal', 
-                                        px: 2,
-                                        whiteSpace: 'nowrap'
-                                    }}
-                                >
-                                    {btn.label}
-                                </ToggleButton>
-                            ))}
-                        </ToggleButtonGroup>
-                    </Box>
-                )}
+            {/* CABECERA CON CONTROLES */}
+            <Box sx={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center', 
+                flexWrap: { xs: 'wrap', md: 'nowrap' }, 
+                gap: 2, mb: 3 
+            }}>
+                <Box>
+                    <Typography variant="h6" fontWeight="bold" color="primary">
+                        {nombreEmpresa || 'Cargando...'}
+                    </Typography>
+                    {/* Switch para activar Bollinger */}
+                    <FormControlLabel
+                        control={
+                            <Switch 
+                                size="small"
+                                checked={verBollinger} 
+                                onChange={(e) => setVerBollinger(e.target.checked)}
+                                color="warning"
+                            />
+                        }
+                        label={<Typography variant="caption" color="text.secondary">Bandas de Bollinger</Typography>}
+                    />
+                </Box>
+
+                <ToggleButtonGroup
+                    value={rango}
+                    exclusive
+                    onChange={handleCambioRango}
+                    size="small"
+                    color="primary"
+                >
+                    {botonesRango.map((b) => (
+                        <ToggleButton key={b.v} value={b.v} sx={{ px: { xs: 1, sm: 2 }, fontSize: '0.75rem' }}>
+                            {b.label}
+                        </ToggleButton>
+                    ))}
+                </ToggleButtonGroup>
             </Box>
 
-            {/* CONTENEDOR DEL GRÁFICO: relative y flexGrow garantizan que ocupa el 100% de lo que sobra */}
-            <Box sx={{ width: '100%', flexGrow: 1, minHeight: 250, position: 'relative' }}>
+            {/* CONTENEDOR DEL GRÁFICO */}
+            <Box sx={{ width: '100%', flexGrow: 1, minHeight: 300, position: 'relative' }}>
                 
-                {!empresaId ? (
-                    /* Centrado absoluto para que no rompa el flexbox del padre */
+                {!empresaId && (
                     <Box sx={{ position: 'absolute', inset: 0, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                        <Typography variant="body1" fontWeight="500" color="text.secondary">
-                            Esperando selección de empresa...
-                        </Typography>
+                        <Typography color="text.secondary">Selecciona una empresa para ver su historial</Typography>
                     </Box>
+                )}
                 
-                ) : cargando ? (
-                    <Box sx={{ position: 'absolute', inset: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2, color: 'text.secondary' }}>
+                {empresaId && cargando && (
+                    <Box sx={{ position: 'absolute', inset: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2 }}>
                         <CircularProgress size={24} />
-                        <Typography>Dibujando gráfica...</Typography>
+                        <Typography variant="body2">Procesando datos...</Typography>
                     </Box>
+                )}
                 
-                ) : (
+                {empresaId && !cargando && datosFiltrados?.length > 0 && (
                     <ResponsiveContainer width="100%" height="100%">
-                        {/* Se añadió un margin interno para alinear mejor las etiquetas y aprovechar el espacio */}
-                        <AreaChart data={datosFiltrados} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
+                        {/* USAMOS COMPOSED CHART PARA MEZCLAR AREA Y LINEAS */}
+                        <ComposedChart data={datosFiltrados} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
                             <defs>
                                 <linearGradient id="colorPrecio" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor={theme.palette.primary.main} stopOpacity={0.3}/>
+                                    <stop offset="5%" stopColor={theme.palette.primary.main} stopOpacity={0.2}/>
                                     <stop offset="95%" stopColor={theme.palette.primary.main} stopOpacity={0}/>
                                 </linearGradient>
                             </defs>
+                            
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme.palette.divider} />
+                            
                             <XAxis 
                                 dataKey="tiempoMs" 
                                 type="number" 
                                 domain={['dataMin', 'dataMax']}
                                 tickFormatter={(unixTime) => {
                                     const date = new Date(unixTime);
-                                    // Si el rango es de días mostramos la hora, si es mayor mostramos fecha y año
-                                    if (rango === '1D' || rango === '5D') {
-                                        return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-                                    }
-                                    return date.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: '2-digit' });
+                                    return date.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
                                 }}
                                 fontSize={10} 
                                 tick={{fill: theme.palette.text.secondary}} 
-                                minTickGap={40}
+                                minTickGap={30}
                             />
-                            <YAxis domain={['auto', 'auto']} fontSize={10} orientation="right" tick={{fill: theme.palette.text.secondary}} />
+                            
+                            <YAxis 
+                                domain={['auto', 'auto']} 
+                                fontSize={10} 
+                                orientation="right" 
+                                tick={{fill: theme.palette.text.secondary}} 
+                            />
+                            
                             <Tooltip 
-                                labelFormatter={(label, payload) => {
-                                    if (payload && payload.length > 0) {
-                                        return payload[0].payload.FechaLarga;
-                                    }
-                                    return label;
-                                }}
+                                labelFormatter={(val) => new Date(val).toLocaleDateString('es-ES', { dateStyle: 'long' })}
                                 contentStyle={{
                                     borderRadius: '8px', 
                                     border: 'none', 
-                                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                                    backgroundColor: theme.palette.background.paper, 
-                                    color: theme.palette.text.primary,
-                                    textTransform: 'capitalize'
+                                    boxShadow: theme.shadows[3],
+                                    backgroundColor: theme.palette.background.paper
                                 }} 
                             />
-                            <Area type="monotone" dataKey="PrecioCierre" stroke={theme.palette.primary.main} strokeWidth={2} fillOpacity={1} fill="url(#colorPrecio)" />
-                        </AreaChart>
+                            
+                            {verBollinger && <Legend verticalAlign="top" height={36}/>}
+
+                            {/* 1. AREA PRINCIPAL DEL PRECIO */}
+                            <Area 
+                                name="Precio"
+                                type="monotone" 
+                                dataKey="PrecioCierre" 
+                                stroke={theme.palette.primary.main} 
+                                strokeWidth={2} 
+                                fillOpacity={1} 
+                                fill="url(#colorPrecio)" 
+                            />
+
+                            {/* 2. INDICADORES TÉCNICOS (Solo si el switch está ON) */}
+                            {verBollinger && (
+                                <>
+                                    <Line 
+                                        name="Media Móvil 20d"
+                                        type="monotone" 
+                                        dataKey="SMA_20" 
+                                        stroke="#4caf50" 
+                                        strokeDasharray="5 5" 
+                                        dot={false} 
+                                        strokeWidth={1.5}
+                                    />
+                                    <Line 
+                                        name="Banda Sup"
+                                        type="monotone" 
+                                        dataKey="Banda_Superior" 
+                                        stroke="#ff9800" 
+                                        dot={false} 
+                                        opacity={0.5}
+                                        strokeWidth={1}
+                                    />
+                                    <Line 
+                                        name="Banda Inf"
+                                        type="monotone" 
+                                        dataKey="Banda_Inferior" 
+                                        stroke="#ff9800" 
+                                        dot={false} 
+                                        opacity={0.5}
+                                        strokeWidth={1}
+                                    />
+                                </>
+                            )}
+                        </ComposedChart>
                     </ResponsiveContainer>
                 )}
             </Box>

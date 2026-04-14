@@ -27,9 +27,9 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
     ];
 
     // Preparamos los datos para las Velas Japonesas y calculamos el dominio dinámico
-    const { datosProcesadosVelas, minGlobal, maxGlobal } = useMemo(() => {
+    const { datosProcesadosVelas, minGlobal, maxGlobal, anchoCuerpo } = useMemo(() => {
         if (!datosFiltrados || datosFiltrados.length === 0) {
-            return { datosProcesadosVelas: [], minGlobal: 0, maxGlobal: 100 };
+            return { datosProcesadosVelas: [], minGlobal: 0, maxGlobal: 100, anchoCuerpo: 10 };
         }
 
         let minG = Infinity;
@@ -59,10 +59,22 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
         // Agregamos un margen del 5% arriba y abajo para que se vea estético
         const margen = (maxG - minG) * 0.05;
         
+        // --- NUEVO: CÁLCULO DINÁMICO DEL GROSOR DE LA VELA ---
+        const cantidadPuntos = datos.length;
+        let grosor = 10; 
+        
+        if (cantidadPuntos > 400) grosor = 1;       // Modo 'Todo' / 5 Años (Línea fina)
+        else if (cantidadPuntos > 200) grosor = 3;  // Modo 1 Año
+        else if (cantidadPuntos > 100) grosor = 5;  // Modo 6 Meses
+        else if (cantidadPuntos > 40) grosor = 8;   // Modo 3 Meses
+        else grosor = 12;                           // Modo 1 Mes o menor
+        // -----------------------------------------------------
+
         return { 
             datosProcesadosVelas: datos,
             minGlobal: Math.max(0, minG - margen), 
-            maxGlobal: maxG + margen
+            maxGlobal: maxG + margen,
+            anchoCuerpo: grosor  // Exportamos el grosor dinámico
         };
     }, [datosFiltrados]);
 
@@ -226,7 +238,7 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
                                         xAxisId={0} 
                                         dataKey="velaCuerpo" 
                                         name="Cuerpo de Vela" 
-                                        barSize={10} 
+                                        barSize={anchoCuerpo}
                                         isAnimationActive={false}
                                     >
                                         {datosProcesadosVelas.map((entry, index) => (

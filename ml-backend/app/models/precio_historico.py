@@ -11,6 +11,11 @@ class PrecioHistorico(Base):
     IdEmpresa = Column(Integer, ForeignKey("Empresa.IdEmpresa"), nullable=False)
     Fecha = Column(Date, nullable=False)
     PrecioCierre = Column(DECIMAL(18, 4), nullable=False)
+
+    PrecioApertura = Column(DECIMAL(18, 4), nullable=True)
+    PrecioMaximo = Column(DECIMAL(18, 4), nullable=True)
+    PrecioMinimo = Column(DECIMAL(18, 4), nullable=True)
+
     Volumen = Column(BigInteger, nullable=False)
     FechaRegistro = Column(DateTime, default=obtener_hora_formateada)
 

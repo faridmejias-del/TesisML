@@ -154,6 +154,7 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme.palette.divider} />
                             
                             <XAxis 
+                                xAxisId={0}
                                 dataKey="tiempoMs" 
                                 type="number" 
                                 domain={['dataMin', 'dataMax']}
@@ -165,6 +166,8 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
                                 tick={{fill: theme.palette.text.secondary}} 
                                 minTickGap={30}
                             />
+
+                            <XAxis xAxisId={1} dataKey="tiempoMs" type="number" hide domain={['dataMin', 'dataMax']} />
                             
                             {/* Ajuste explícito de Dominio para evitar que las Velas colapsen a cero */}
                             <YAxis 
@@ -201,17 +204,36 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
                             {/* CONDICIONAL: VELAS JAPONESAS O ÁREA */}
                             {verVelas ? (
                                 <>
-                                    {/* MECHAS (High / Low) - Se dibuja primero para quedar debajo */}
-                                    <Bar dataKey="velaMecha" name="Mecha" barSize={2} isAnimationActive={false}>
+                                    {/* MECHAS (High / Low) - Centrada y color Neutro */}
+                                    <Bar 
+                                        xAxisId={1} 
+                                        dataKey="velaMecha" 
+                                        name="Mecha" 
+                                        barSize={1} 
+                                        isAnimationActive={false}
+                                    >
                                         {datosProcesadosVelas.map((entry, index) => (
-                                            <Cell key={`mecha-${index}`} fill={entry.esAlcista ? '#4caf50' : '#f44336'} />
+                                            // Color gris oscuro/negro para la mecha (ajustado al tema)
+                                            <Cell 
+                                                key={`mecha-${index}`} 
+                                                fill={theme.palette.mode === 'dark' ? '#99a1b3' : '#474d57'} 
+                                            />
                                         ))}
                                     </Bar>
                                     
-                                    {/* CUERPO (Open / Close) */}
-                                    <Bar dataKey="velaCuerpo" name="Cuerpo de Vela" barSize={10} isAnimationActive={false}>
+                                    {/* CUERPO (Open / Close) - Colores estilo TradingView */}
+                                    <Bar 
+                                        xAxisId={0} 
+                                        dataKey="velaCuerpo" 
+                                        name="Cuerpo de Vela" 
+                                        barSize={10} 
+                                        isAnimationActive={false}
+                                    >
                                         {datosProcesadosVelas.map((entry, index) => (
-                                            <Cell key={`cuerpo-${index}`} fill={entry.esAlcista ? '#4caf50' : '#f44336'} />
+                                            <Cell 
+                                                key={`cuerpo-${index}`} 
+                                                fill={entry.esAlcista ? '#4caf50' : '#ef5350'} 
+                                            />
                                         ))}
                                     </Bar>
                                 </>

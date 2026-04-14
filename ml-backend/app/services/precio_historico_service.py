@@ -101,6 +101,11 @@ class PrecioHistoricoService:
                     IdEmpresa=empresa_id,
                     Fecha=index.date(),
                     PrecioCierre=precio_cierre,
+                    # AGREGAR ESTAS 3 LÍNEAS PARA GUARDAR LAS VELAS:
+                    PrecioApertura=float(row['Open']) if not pd.isna(row['Open']) else None,
+                    PrecioMaximo=float(row['High']) if not pd.isna(row['High']) else None,
+                    PrecioMinimo=float(row['Low']) if not pd.isna(row['Low']) else None,
+                    # ----------------------------------------------
                     Volumen=int(row['Volume']) if not pd.isna(row['Volume']) else 0,
                     #Bandas de bollinger 
                     SMA_20=float(row['SMA_20']) if not pd.isna(row['SMA_20']) else None,
@@ -137,6 +142,11 @@ class PrecioHistoricoService:
         df = pd.DataFrame([{
             "Fecha": p.Fecha,
             "PrecioCierre": float(p.PrecioCierre),
+            # AGREGAR ESTAS 3 LÍNEAS:
+            "PrecioApertura": float(p.PrecioApertura) if p.PrecioApertura is not None else float(p.PrecioCierre),
+            "PrecioMaximo": float(p.PrecioMaximo) if p.PrecioMaximo is not None else float(p.PrecioCierre),
+            "PrecioMinimo": float(p.PrecioMinimo) if p.PrecioMinimo is not None else float(p.PrecioCierre),
+            # ----------------------
             "SMA_20": float(p.SMA_20) if p.SMA_20 else None,
             "Banda_Superior": float(p.Banda_Superior) if p.Banda_Superior else None,
             "Banda_Inferior": float(p.Banda_Inferior) if p.Banda_Inferior else None

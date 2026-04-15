@@ -3,20 +3,25 @@ import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query'; 
 import { iaService } from '../../../services';
 import toast from 'react-hot-toast';
+import { useAuth } from '../../../context/AuthContext'; // <-- IMPORTAMOS EL AUTH CONTEXT
 
 export const useEntrenamientoIA = () => {
+    const { usuario } = useAuth(); // <-- OBTENEMOS EL USUARIO
     const [modeloSeleccionado, setModeloSeleccionado] = useState('');
     const [entrenando, setEntrenando] = useState(false);
 
     const { data: modelos = [] } = useQuery({
-        queryKey: ['modelos_activos'],
+        // Cambiamos la key para que dependa del id del usuario
+        queryKey: ['modelos_usuario', usuario?.id], 
         queryFn: async () => {
-            return await iaService.obtenerModelosActivos();
+            if (!usuario?.id) return [];
+            // Llamamos a la nueva función
+            return await iaService.obtenerModelosPorUsuario(usuario.id);
         },
+        enabled: !!usuario?.id, // Solo se ejecuta si hay un usuario logueado
         staleTime: 1000 * 60 * 60,
     });
 
-    // Sincronizamos el estado inicial para evitar el error de "undefined"
     useEffect(() => {
         if (modelos.length > 0 && !modeloSeleccionado) {
             setModeloSeleccionado(modelos[0].IdModelo);

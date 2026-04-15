@@ -21,6 +21,10 @@ const iaService = {
         const response = await api.get(`${MODELOS_URL}/activos`);
         return response.data;
     },
+    obtenerModelosPorUsuario: async (usuarioId) => {
+        const response = await api.get(`${MODELOS_URL}/usuario/${usuarioId}`);
+        return response.data;
+    },
     obtenerPrediccionEmpresa: async (empresaId, modeloId = null) => {
         const params = modeloId ? { modelo_id: modeloId } : {};
         const response = await api.get(`${API_URL}/prediccion/${empresaId}`, { params });

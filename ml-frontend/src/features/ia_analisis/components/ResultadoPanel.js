@@ -3,7 +3,10 @@ import React, { useState, useEffect } from 'react';
 import { Box, Paper, Typography, CircularProgress, Chip, Divider, Stack, FormControl, Select, MenuItem } from '@mui/material';
 import { useTheme } from '@mui/material/styles'; 
 import { useResultadoIA } from '../hooks/useResultadoIA';
-import api from '../../../services/api'; 
+
+// --- NUEVAS IMPORTACIONES ---
+import { useAuth } from '../../../context/AuthContext';
+import iaService from '../../../services/iaService';
 
 const MedidorRSI = ({ rsi }) => {
     const theme = useTheme(); 
@@ -51,6 +54,9 @@ const MedidorRSI = ({ rsi }) => {
 };
 
 export default function ResultadoPanel({ empresaId }) {
+    // --- OBTENEMOS EL USUARIO ---
+    const { usuario } = useAuth();
+
     const [modelosActivos, setModelosActivos] = useState([]);
     const [modeloSeleccionado, setModeloSeleccionado] = useState('');
     const [cargandoModelos, setCargandoModelos] = useState(true);
@@ -60,12 +66,19 @@ export default function ResultadoPanel({ empresaId }) {
     useEffect(() => {
         let montado = true;
         const fetchModelos = async () => {
+            // Validación de seguridad para que no intente buscar si no hay ID
+            if (!usuario?.id) return; 
+
             try {
-                const response = await api.get('/modelos-ia/activos');
+                // --- LLAMADA AL ENDPOINT PROTEGIDO DEL USUARIO ---
+                const data = await iaService.obtenerModelosPorUsuario(usuario.id);
                 if (montado) {
-                    setModelosActivos(response.data);
-                    if (response.data.length > 0) {
-                        setModeloSeleccionado(response.data[0].IdModelo);
+                    setModelosActivos(data);
+                    if (data.length > 0) {
+                        setModeloSeleccionado(data[0].IdModelo);
+                    } else {
+                        // Si no tiene modelos, limpiamos el estado
+                        setModeloSeleccionado('');
                     }
                 }
             } catch (error) {
@@ -76,7 +89,7 @@ export default function ResultadoPanel({ empresaId }) {
         };
         fetchModelos();
         return () => { montado = false; };
-    }, []);
+    }, [usuario?.id]); // --- AGREGAMOS EL ID A LAS DEPENDENCIAS ---
 
     if (!empresaId) {
         return (
@@ -86,7 +99,6 @@ export default function ResultadoPanel({ empresaId }) {
         );
     }
 
-    // NUEVO: Usamos directamente la base de datos o el texto procesado por el hook
     const recomendacionIA = resultado?.Recomendacion ? resultado.Recomendacion.toUpperCase() : (recomendacionTexto || 'N/A').toUpperCase();
     const esTendenciaAlcista = recomendacionIA.includes('ALCISTA') || recomendacionIA.includes('COMPRA') || esCompra;
     
@@ -122,6 +134,13 @@ export default function ResultadoPanel({ empresaId }) {
                     <CircularProgress size={24} color="primary" />
                     <Typography color="text.secondary" fontWeight="500" fontSize="0.85rem">
                         Analizando parámetros...
+                    </Typography>
+                </Box>
+            ) : modelosActivos.length === 0 ? (
+                // --- NUEVO ESTADO: EL USUARIO NO TIENE MODELOS ---
+                <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2 }}>
+                    <Typography color="error" sx={{ fontSize: '0.85rem', lineHeight: 1.4, textAlign: 'center', fontWeight: 'bold' }}>
+                        No tienes acceso a modelos de IA.
                     </Typography>
                 </Box>
             ) : resultado ? (
@@ -160,7 +179,6 @@ export default function ResultadoPanel({ empresaId }) {
                     </Typography>
                     
                     <Stack direction="row" flexWrap="wrap" gap={1}>
-                        {/* CHIP DE TENDENCIA ARREGLADO */}
                         <Chip 
                             label={`Tendencia: ${recomendacionIA}`}
                             sx={{ 

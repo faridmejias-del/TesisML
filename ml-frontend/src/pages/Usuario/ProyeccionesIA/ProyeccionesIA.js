@@ -25,25 +25,29 @@ const VistaProyecciones = () => {
     useEffect(() => {
         let montado = true;
         const fetchModelos = async () => {
+            if (!usuario?.id) return; // Validación de seguridad
+
             try {
-                const data = await iaService.obtenerModelosActivos();
+                // CAMBIO AQUÍ: Llamamos a obtenerModelosPorUsuario
+                const data = await iaService.obtenerModelosPorUsuario(usuario.id);
                 if (montado) {
                     setModelosActivos(data);
-                    // Si hay modelos, selecciona el primero por defecto
                     if (data.length > 0) {
                         setModeloSeleccionado(data[0].IdModelo);
+                    } else {
+                        // Si no tiene modelos, limpiamos el seleccionado
+                        setModeloSeleccionado('');
                     }
                 }
             } catch (error) {
                 console.error("Error cargando modelos", error);
             } finally {
-                // Independiente de si falla o acierta, apagamos la carga de modelos
                 if (montado) setCargandoModelos(false); 
             }
         };
         fetchModelos();
         return () => { montado = false; };
-    }, []); // <-- CORRECCIÓN: Array vacío para que no se re-dispare innecesariamente
+    }, [usuario?.id]);
 
     // Extraemos las proyecciones pasándole el modelo seleccionado
     const { proyecciones, sectores, cargando: cargandoProyecciones, error } = useProyeccionesIA(idUsuarioFiltro, modeloSeleccionado);
@@ -152,6 +156,17 @@ const VistaProyecciones = () => {
                     />
                 ))}
             </Box>
+
+            {!cargandoModelos && modelosActivos.length === 0 && (
+                <Box sx={{ textAlign: 'center', p: 3, bgcolor: 'rgba(239, 68, 68, 0.1)', borderRadius: 2, border: '1px solid #ef4444' }}>
+                    <Typography color="error" fontWeight="bold">
+                        Actualmente no tienes modelos de IA habilitados en tu cuenta.
+                    </Typography>
+                    <Typography color="text.secondary" variant="body2">
+                        Contacta a un administrador para solicitar acceso a las proyecciones.
+                    </Typography>
+                </Box>
+            )}
         </Box>
     );
 };

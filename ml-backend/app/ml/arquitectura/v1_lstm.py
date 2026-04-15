@@ -2,45 +2,78 @@ import torch
 import torch.nn as nn
 
 class ModeloLSTM_v1(nn.Module):
-    def __init__(self, num_features):
-        super(ModeloLSTM_v1, self).__init__()
+    def __init__(self, num_features: int, hidden_size: int = 64, num_layers: int = 2):
+        """
+        LSTM mejorado para predicción de precios.
         
-        #Motor Temporal
-        self.lstm = nn.LSTM(input_size=num_features, hidden_size=32, batch_first=True)
+        Args:
+            num_features: Número de indicadores técnicos
+            hidden_size: Dimensión del estado oculto (recomendado: 64-128)
+            num_layers: Número de capas LSTM apiladas
+        """
+        super().__init__()
         
-        #ESTABILIZADOR 1: Domina la salida de la GRU (32 neuronas)
-        self.bn1 = nn.BatchNorm1d(32) 
-        self.dropout = nn.Dropout(0.4) 
+        # Motor Temporal Multi-capa
+        self.lstm = nn.LSTM(
+            input_size=num_features, 
+            hidden_size=hidden_size, 
+            num_layers=num_layers,
+            batch_first=True,
+            dropout=0.3 if num_layers > 1 else 0
+        )
         
-        # Capa de Razonamiento
-        self.fc1 = nn.Linear(32, 16)
+        # Batch Norm después de LSTM
+        self.bn1 = nn.BatchNorm1d(hidden_size)
+        self.dropout1 = nn.Dropout(0.4)
         
-        #ESTABILIZADOR 2: Afina la decisión justo antes de predecir (16 neuronas)
-        self.bn2 = nn.BatchNorm1d(16)
+        # Capas densas progresivas
+        self.fc1 = nn.Linear(hidden_size, hidden_size // 2)
+        self.bn2 = nn.BatchNorm1d(hidden_size // 2)
         self.relu = nn.ReLU()
+        self.dropout2 = nn.Dropout(0.3)
         
-        #Cabezas Multi-Tarea
-        self.cabeza_regresion = nn.Linear(16, 1)     
-        self.cabeza_clasificacion = nn.Linear(16, 1) 
-
+        self.fc2 = nn.Linear(hidden_size // 2, 32)
+        self.bn3 = nn.BatchNorm1d(32)
+        
+        # Cabezas Multi-Tarea
+        self.head_regression = nn.Linear(32, 1)
+        self.head_classification = nn.Linear(32, 1)
+        
+        self._init_weights()
+    
+    def _init_weights(self):
+        """Inicialización xavier para convergencia más estable"""
+        for name, param in self.named_parameters():
+            if 'weight' in name:
+                if 'lstm' in name:
+                    nn.init.orthogonal_(param)
+                else:
+                    nn.init.xavier_uniform_(param)
+            elif 'bias' in name:
+                nn.init.constant_(param, 0.0)
+    
     def forward(self, x):
         lstm_out, _ = self.lstm(x)
         
-        # Extraemos solo el último día de la secuencia
-        x = lstm_out[:, -1, :] 
+        # Tomar solo la última posición temporal
+        x = lstm_out[:, -1, :]
         
-        # Aplicamos la estabilización matemática
         x = self.bn1(x)
-        x = self.dropout(x)
+        x = self.dropout1(x)
         
         x = self.fc1(x)
         x = self.bn2(x)
         x = self.relu(x)
+        x = self.dropout2(x)
         
-        precio_predicho = self.cabeza_regresion(x)
-        direccion_predicha = self.cabeza_clasificacion(x) 
+        x = self.fc2(x)
+        x = self.bn3(x)
+        x = self.relu(x)
         
-        return precio_predicho, direccion_predicha
+        reg_pred = self.head_regression(x)
+        clf_pred = self.head_classification(x)
+        
+        return reg_pred, clf_pred
 
-def obtener_modelo_v1(dias_pasados, num_features):
-    return ModeloLSTM_v1(num_features)
+def obtener_modelo_v1(dias_pasados, num_features, hidden_size=64, num_layers=2):
+    return ModeloLSTM_v1(num_features, hidden_size, num_layers)

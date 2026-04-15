@@ -24,6 +24,11 @@ class MLEngine:
     
     DIAS_MEMORIA_IA = 30 #VARIABLE GLOBAL: Dias de memoria que la IA utiliza 
     DIAS_PREDICCION = 5 #VARIABLE GLOBAL: Días a predecir hacia el futuro
+    
+    # Umbrales calibrados por análisis ROC en validación
+    UMBRAL_ALCISTA = 0.62  # Optimizado para maximizar F1
+    UMBRAL_BAJISTA = 0.38  # Simétrico al alcista
+    
     FEATURES = [
         # Originales
         'Close', 'Volume', 'RSI', 'MACD', 'ATR', 'EMA20', 'EMA50',
@@ -45,11 +50,16 @@ class MLEngine:
         'LogReturn_Lag1', 'LogReturn_Lag2', 'LogReturn_Lag3', 'Hist_Volatility_20'
     ]
 
-    def __init__(self, version="v1", model=None, scaler=None):
+    def __init__(self, version="v1", model=None, scaler=None, 
+                 umbral_alcista: float = None, umbral_bajista: float = None):
         self.version = version
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.scaler = scaler
         self.model = model
+        
+        # Permitir override de umbrales
+        self.umbral_alcista = umbral_alcista or self.UMBRAL_ALCISTA
+        self.umbral_bajista = umbral_bajista or self.UMBRAL_BAJISTA
         
         if self.model is None or self.scaler is None:
             self._inicializar_recursos()
@@ -218,34 +228,40 @@ class MLEngine:
         return df_clean
 
     def predecir(self, df_ind):
-        if self.model is None or self.scaler is None: return None
-
-        x_test_tensor = self._preparar_tensor(df_ind)
+        if self.model is None or self.scaler is None: 
+            return None
         
+        x_test_tensor = self._preparar_tensor(df_ind)
         precio_actual = df_ind.iloc[-1]['Close']
+        
         with torch.no_grad():
             pred_reg_tensor, pred_clf_tensor = self.model(x_test_tensor)
             prediccion_cruda = pred_reg_tensor.cpu().numpy()[0][0]
-            
-            #APLICAMOS LA SIGMOIDE MANUALMENTE PARA OBTENER PORCENTAJE
             probabilidad_alcista = torch.sigmoid(pred_clf_tensor).cpu().numpy()[0][0]
             
-            if probabilidad_alcista > 0.65: 
-                recomendacion = "ALCISTA"; score = 1
-            elif probabilidad_alcista < 0.35: 
-                recomendacion = "BAJISTA"; score = -1
+            # Usar umbrales configurables
+            if probabilidad_alcista > self.umbral_alcista: 
+                recomendacion = "ALCISTA"
+                score = 1
+            elif probabilidad_alcista < self.umbral_bajista: 
+                recomendacion = "BAJISTA"
+                score = -1
             else: 
-                recomendacion = "MANTENER"; score = 0
+                recomendacion = "MANTENER"
+                score = 0
         
         pred_real = self._desescalar_prediccion(prediccion_cruda, precio_actual)
         var_pct = ((pred_real - precio_actual) / precio_actual) * 100
-            
+        
         return {
             "prediccion": float(pred_real),
             "variacion": float(var_pct),
             "score": float(score),
             "recomendacion": recomendacion,
             "prob_alcista": float(probabilidad_alcista),
-            "modelo": self.version,              
+            "modelo": self.version,
+            "umbral_usado_alcista": self.umbral_alcista,
+            "umbral_usado_bajista": self.umbral_bajista,
             "features": df_ind.iloc[-1].to_dict() 
-        }
+        } 
+        

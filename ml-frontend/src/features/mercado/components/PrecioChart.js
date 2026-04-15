@@ -15,9 +15,8 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
     const theme = useTheme();
     const { datosFiltrados, rango, cargando, handleCambioRango } = usePrecioHistorico(empresaId);
     
-    // Estado local para los indicadores técnicos y tipo de gráfico
-    const [verBollinger, setVerBollinger] = useState(false);
-    const [verVelas, setVerVelas] = useState(false);
+    // Estado unificado para el modo de análisis técnico
+    const [modoTecnico, setModoTecnico] = useState(false);
 
     const botonesRango = [
         { label: '1 día', v: '1D' }, { label: '5 días', v: '5D' },
@@ -26,7 +25,6 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
         { label: 'Todo', v: 'TODO' }
     ];
 
-    // Preparamos los datos para las Velas Japonesas y calculamos el dominio dinámico
     const { datosProcesadosVelas, minGlobal, maxGlobal, anchoCuerpo } = useMemo(() => {
         if (!datosFiltrados || datosFiltrados.length === 0) {
             return { datosProcesadosVelas: [], minGlobal: 0, maxGlobal: 100, anchoCuerpo: 10 };
@@ -36,52 +34,44 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
         let maxG = -Infinity;
 
         const datos = datosFiltrados.map(d => {
-            // Protección contra datos antiguos que solo tienen PrecioCierre
             const open = d.PrecioApertura !== null && d.PrecioApertura !== undefined ? Number(d.PrecioApertura) : Number(d.PrecioCierre);
             const close = Number(d.PrecioCierre);
             const high = d.PrecioMaximo !== null && d.PrecioMaximo !== undefined ? Number(d.PrecioMaximo) : Math.max(open, close);
             const low = d.PrecioMinimo !== null && d.PrecioMinimo !== undefined ? Number(d.PrecioMinimo) : Math.min(open, close);
             
-            // Calculamos mínimos y máximos para que el gráfico no colapse a 0
             if (low < minG) minG = low;
             if (high > maxG) maxG = high;
 
             return {
                 ...d,
                 open, close, high, low,
-                // Array [bottom, top] para que Recharts dibuje el rango exacto
                 velaCuerpo: [Math.min(open, close), Math.max(open, close)],
                 velaMecha: [low, high],
                 esAlcista: close >= open
             };
         });
 
-        // Agregamos un margen del 5% arriba y abajo para que se vea estético
         const margen = (maxG - minG) * 0.05;
-        
-        // --- NUEVO: CÁLCULO DINÁMICO DEL GROSOR DE LA VELA ---
         const cantidadPuntos = datos.length;
         let grosor = 10; 
         
-        if (cantidadPuntos > 400) grosor = 1;       // Modo 'Todo' / 5 Años (Línea fina)
-        else if (cantidadPuntos > 200) grosor = 3;  // Modo 1 Año
-        else if (cantidadPuntos > 100) grosor = 5;  // Modo 6 Meses
-        else if (cantidadPuntos > 40) grosor = 8;   // Modo 3 Meses
-        else grosor = 12;                           // Modo 1 Mes o menor
-        // -----------------------------------------------------
+        if (cantidadPuntos > 400) grosor = 1;
+        else if (cantidadPuntos > 200) grosor = 3;
+        else if (cantidadPuntos > 100) grosor = 5;
+        else if (cantidadPuntos > 40) grosor = 8;
+        else grosor = 12;
 
         return { 
             datosProcesadosVelas: datos,
             minGlobal: Math.max(0, minG - margen), 
             maxGlobal: maxG + margen,
-            anchoCuerpo: grosor  // Exportamos el grosor dinámico
+            anchoCuerpo: grosor
         };
     }, [datosFiltrados]);
 
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%' }}>
             
-            {/* CABECERA CON CONTROLES */}
             <Box sx={{ 
                 display: 'flex', 
                 justifyContent: 'space-between', 
@@ -95,29 +85,21 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
                     </Typography>
                     
                     <Box sx={{ display: 'flex', gap: 2 }}>
-                        {/* Switch para activar Velas Japonesas */}
+                        {/* Toggle unificado para Velas + Bollinger */}
                         <FormControlLabel
                             control={
                                 <Switch 
                                     size="small"
-                                    checked={verVelas} 
-                                    onChange={(e) => setVerVelas(e.target.checked)}
-                                    color="primary"
+                                    checked={modoTecnico} 
+                                    onChange={(e) => setModoTecnico(e.target.checked)}
+                                    color="secondary"
                                 />
                             }
-                            label={<Typography variant="caption" color="text.secondary">Velas Japonesas</Typography>}
-                        />
-                        {/* Switch para activar Bollinger */}
-                        <FormControlLabel
-                            control={
-                                <Switch 
-                                    size="small"
-                                    checked={verBollinger} 
-                                    onChange={(e) => setVerBollinger(e.target.checked)}
-                                    color="warning"
-                                />
+                            label={
+                                <Typography variant="caption" color="text.secondary">
+                                    Análisis Técnico (Velas + Bollinger)
+                                </Typography>
                             }
-                            label={<Typography variant="caption" color="text.secondary">Bandas de Bollinger</Typography>}
                         />
                     </Box>
                 </Box>
@@ -137,9 +119,7 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
                 </ToggleButtonGroup>
             </Box>
 
-            {/* CONTENEDOR DEL GRÁFICO */}
             <Box sx={{ width: '100%', flexGrow: 1, minHeight: 300, position: 'relative' }}>
-                
                 {!empresaId && (
                     <Box sx={{ position: 'absolute', inset: 0, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                         <Typography color="text.secondary">Selecciona una empresa para ver su historial</Typography>
@@ -181,7 +161,6 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
 
                             <XAxis xAxisId={1} dataKey="tiempoMs" type="number" hide domain={['dataMin', 'dataMax']} />
                             
-                            {/* Ajuste explícito de Dominio para evitar que las Velas colapsen a cero */}
                             <YAxis 
                                 domain={[minGlobal, maxGlobal]} 
                                 fontSize={10} 
@@ -198,7 +177,6 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
                                     backgroundColor: theme.palette.background.paper
                                 }} 
                                 formatter={(value, name, props) => {
-                                    // Personalizamos el Tooltip si estamos en modo Velas Japonesas
                                     if (name === "Cuerpo de Vela") {
                                         const { open, close, high, low } = props.payload;
                                         return [
@@ -206,50 +184,35 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
                                             "OHLC"
                                         ];
                                     }
-                                    if (name === "Mecha") return ["", ""]; // Ocultar info redundante de la mecha
+                                    if (name === "Mecha") return ["", ""];
                                     return [Number(value).toFixed(2), name];
                                 }}
                             />
                             
-                            {verBollinger && <Legend verticalAlign="top" height={36}/>}
+                            {modoTecnico && <Legend verticalAlign="top" height={36}/>}
 
-                            {/* CONDICIONAL: VELAS JAPONESAS O ÁREA */}
-                            {verVelas ? (
+                            {/* Renderizado condicional unificado */}
+                            {modoTecnico ? (
                                 <>
-                                    {/* MECHAS (High / Low) - Centrada y color Neutro */}
-                                    <Bar 
-                                        xAxisId={1} 
-                                        dataKey="velaMecha" 
-                                        name="Mecha" 
-                                        barSize={1} 
-                                        isAnimationActive={false}
-                                    >
+                                    {/* Velas Japonesas */}
+                                    <Bar xAxisId={1} dataKey="velaMecha" name="Mecha" barSize={1} isAnimationActive={false}>
                                         {datosProcesadosVelas.map((entry, index) => (
-                                            // Color gris oscuro/negro para la mecha (ajustado al tema)
-                                            <Cell 
-                                                key={`mecha-${index}`} 
-                                                fill={theme.palette.mode === 'dark' ? '#99a1b3' : '#474d57'} 
-                                            />
+                                            <Cell key={`mecha-${index}`} fill={theme.palette.mode === 'dark' ? '#99a1b3' : '#474d57'} />
                                         ))}
                                     </Bar>
-                                    
-                                    {/* CUERPO (Open / Close) - Colores estilo TradingView */}
-                                    <Bar 
-                                        xAxisId={0} 
-                                        dataKey="velaCuerpo" 
-                                        name="Cuerpo de Vela" 
-                                        barSize={anchoCuerpo}
-                                        isAnimationActive={false}
-                                    >
+                                    <Bar xAxisId={0} dataKey="velaCuerpo" name="Cuerpo de Vela" barSize={anchoCuerpo} isAnimationActive={false}>
                                         {datosProcesadosVelas.map((entry, index) => (
-                                            <Cell 
-                                                key={`cuerpo-${index}`} 
-                                                fill={entry.esAlcista ? '#4caf50' : '#ef5350'} 
-                                            />
+                                            <Cell key={`cuerpo-${index}`} fill={entry.esAlcista ? '#4caf50' : '#ef5350'} />
                                         ))}
                                     </Bar>
+
+                                    {/* Bandas de Bollinger sobrepuestas */}
+                                    <Line name="Media Móvil 20d" type="monotone" dataKey="SMA_20" stroke="#ff9800" strokeDasharray="5 5" dot={false} strokeWidth={2} connectNulls={true} />
+                                    <Line name="Banda Sup" type="monotone" dataKey="Banda_Superior" stroke="#f44336" dot={false} opacity={0.8} strokeWidth={2} connectNulls={true} />
+                                    <Line name="Banda Inf" type="monotone" dataKey="Banda_Inferior" stroke="#4caf50" dot={false} opacity={0.8} strokeWidth={2} connectNulls={true} />
                                 </>
                             ) : (
+                                /* Gráfico de Área estándar */
                                 <Area 
                                     name="Precio"
                                     type="monotone" 
@@ -259,45 +222,6 @@ function PrecioChart({ empresaId, nombreEmpresa }) {
                                     fillOpacity={1} 
                                     fill="url(#colorPrecio)" 
                                 />
-                            )}
-
-                            {/* INDICADORES TÉCNICOS - connectNulls ayuda a que no se vean raros los cortes de datos */}
-                            {verBollinger && (
-                                <>
-                                    <Line 
-                                        name="Media Móvil 20d"
-                                        type="monotone" 
-                                        dataKey="SMA_20" 
-                                        stroke="#ff9800" 
-                                        strokeDasharray="5 5" 
-                                        dot={false} 
-                                        strokeWidth={2}
-                                        connectNulls={true}
-                                        legendType="square"
-                                    />
-                                    <Line 
-                                        name="Banda Sup"
-                                        type="monotone" 
-                                        dataKey="Banda_Superior" 
-                                        stroke="#f44336" 
-                                        dot={false} 
-                                        opacity={0.8}
-                                        strokeWidth={2}
-                                        connectNulls={true}
-                                        legendType="square"
-                                    />
-                                    <Line 
-                                        name="Banda Inf"
-                                        type="monotone" 
-                                        dataKey="Banda_Inferior" 
-                                        stroke="#4caf50" 
-                                        dot={false} 
-                                        opacity={0.8}
-                                        strokeWidth={2}
-                                        connectNulls={true}
-                                        legendType="square"
-                                    />
-                                </>
                             )}
                         </ComposedChart>
                     </ResponsiveContainer>

@@ -29,18 +29,33 @@ def entrenar_pipeline_lstm(id_modelo: int = None):
         
         # 2. Extracción masiva paralela
         datos_procesados = []
-        print(f"📥 Iniciando extracción para {len(ids_empresas)} empresas. Esto puede tomar unos segundos...", flush=True)
+        lote_size = 15 # Procesamos de 15 en 15 para no asfixiar la RAM ni la Base de Datos
+        
+        print(f"📥 Iniciando extracción para {len(ids_empresas)} empresas en lotes de {lote_size}...", flush=True)
+        
         with Timer("Extracción y Procesamiento"):
-            with ProcessPoolExecutor(max_workers=4) as executor:
-                futuros = [executor.submit(extraer_y_procesar_empresa, id_e) for id_e in ids_empresas]
-                completados = 0
-                for f in as_completed(futuros):
-                    res = f.result()
-                    if res is not None: datos_procesados.append(res)
-                    completados += 1
+            for i in range(0, len(ids_empresas), lote_size):
+                lote_actual = ids_empresas[i : i + lote_size]
+                print(f"   ⚙️ Procesando lote {i//lote_size + 1} (Empresas {i+1} a {min(i+lote_size, len(ids_empresas))})...", flush=True)
+                
+                # Creamos el pool SOLO para este lote y lo cerramos al terminar
+                with ProcessPoolExecutor(max_workers=4) as executor:
+                    futuros = [executor.submit(extraer_y_procesar_empresa, id_e) for id_e in lote_actual]
                     
-                    if completados % 10 == 0 or completados == len(ids_empresas):
-                        print(f"   -> Extraídas {completados}/{len(ids_empresas)} empresas...", flush=True)
+                    
+                    for f in as_completed(futuros):
+                        try:
+                            # El timeout evita que se quede pegado infinito si un worker muere
+                            res = f.result(timeout=180) 
+                            if res is not None: 
+                                datos_procesados.append(res)
+                        except Exception as e:
+                            print(f"   ❌ Error o Timeout en un worker: {str(e)}", flush=True)
+                
+                # Limpiamos la RAM antes de pasar al siguiente lote de 15
+                gc.collect()
+
+        print(f"Extracción completa. {len(datos_procesados)} empresas válidas listas para entrenar.", flush=True)
 
         # 3. Preparación de Tensores
         with Timer("Preparación de Tensores"):

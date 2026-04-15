@@ -23,9 +23,14 @@ def extraer_y_procesar_empresa_cnn(id_empresa: int) -> Optional[pd.DataFrame]:
         if len(registros) < 60: return None
             
         df = pd.DataFrame([{
-            'Date': r.Fecha, 'Open': r.PrecioApertura, 'High': r.PrecioMaximo,
-            'Low': r.PrecioMinimo, 'Close': r.PrecioCierre, 'Volume': r.Volumen
+            'Date': r.Fecha, 
+            'Open': r.PrecioApertura, 
+            'High': r.PrecioMaximo,
+            'Low': r.PrecioMinimo, 
+            'Close': r.PrecioCierre, 
+            'Volume': r.Volumen
         } for r in registros]).set_index('Date')
+        df = df.astype(float)
         
         engine = MLEngine()
         df_procesado = engine.calcular_indicadores(df)

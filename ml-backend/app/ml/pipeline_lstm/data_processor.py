@@ -30,6 +30,7 @@ def extraer_y_procesar_empresa(id_empresa: int) -> Optional[pd.DataFrame]:
             'Close': r.PrecioCierre, 
             'Volume': r.Volumen
         } for r in registros]).set_index('Date')
+        df = df.astype(float) #Para no romper el calculo de indicadores con tipos mixtos 
         
         engine = MLEngine()
         df_procesado = engine.calcular_indicadores(df)

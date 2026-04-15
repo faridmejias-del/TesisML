@@ -11,7 +11,7 @@ from tqdm import tqdm
 
 from app.db.sessions import SessionLocal
 from app.models.precio_historico import PrecioHistorico
-from app.ml.core.engine import MLEngine # Importación desde el core
+from app.ml.core.engine import MLEngine 
 
 def extraer_y_procesar_empresa_cnn(id_empresa: int) -> Optional[pd.DataFrame]:
     db = SessionLocal()
@@ -23,8 +23,8 @@ def extraer_y_procesar_empresa_cnn(id_empresa: int) -> Optional[pd.DataFrame]:
         if len(registros) < 60: return None
             
         df = pd.DataFrame([{
-            'Date': r.Fecha, 'Open': r.Apertura, 'High': r.Maximo,
-            'Low': r.Minimo, 'Close': r.Cierre, 'Volume': r.Volumen
+            'Date': r.Fecha, 'Open': r.PrecioApertura, 'High': r.PrecioMaximo,
+            'Low': r.PrecioMinimo, 'Close': r.PrecioCierre, 'Volume': r.Volumen
         } for r in registros]).set_index('Date')
         
         engine = MLEngine()

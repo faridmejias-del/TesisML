@@ -19,6 +19,8 @@ import MenuIcon from '@mui/icons-material/Menu';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
+import DataSaverOnIcon from '@mui/icons-material/DataSaverOn';
+
 
 const drawerWidth = 250;
 
@@ -78,6 +80,15 @@ export default function AdminLayout() {
             <ListItemText primary="Gestión Modelos IA" primaryTypographyProps={{ fontWeight: 500 }} />
           </ListItemButton>
         </ListItem>
+
+        <ListItem disablePadding sx={{ mb: 1 }}>
+          <ListItemButton component={RouterLink} to="/admin/metricas" selected={isActivo('/admin/metricas')} onClick={() => setMobileOpen(false)}>
+            <ListItemIcon sx={{ color: 'inherit', minWidth: 40 }}><DataSaverOnIcon /></ListItemIcon>
+            <ListItemText primary="Métricas de IA" primaryTypographyProps={{ fontWeight: 500 }} />
+          </ListItemButton>
+        </ListItem>
+
+
       </List>
 
       {/* BOTONES INFERIORES */}

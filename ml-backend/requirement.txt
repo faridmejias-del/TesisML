@@ -19,3 +19,4 @@ torch>=2.0.0
 torchvision>=0.15.0
 torchaudio>=2.0.0
 joblib>=1.3.0
+redis>=5.0.0

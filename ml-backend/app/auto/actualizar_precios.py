@@ -67,6 +67,9 @@ def actualizar_precios_empresa(db: Session, empresa_id: int, ticker: str):
                 IdEmpresa=empresa_id,
                 Fecha=index.date(),
                 PrecioCierre=precio_cierre,
+                PrecioApertura=float(row['Open']),
+                PrecioMaximo=float(row['High']),
+                PrecioMinimo=float(row['Low']),
                 Volumen=int(row['Volume']) if not pd.isna(row['Volume']) else 0,
 
                 #Bandas de bollinger

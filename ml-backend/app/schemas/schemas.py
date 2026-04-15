@@ -159,6 +159,9 @@ class PortafolioOut(BaseModel):
 class PrecioHistoricoBase(BaseModel):
     Fecha: datetime = Field(..., description = "Fecha del precio historico")
     PrecioCierre: Decimal = Field(..., description= "Precio de cierre de la empresa")
+    PrecioApertura: Decimal = Field(..., description= "Precio de Apertura de la empresa")
+    PrecioMaximo: Decimal = Field(..., description= "Precio de Máximo de la empresa")
+    PrecioMinimo: Decimal = Field(..., description= "Precio de Mínimo de la empresa")
     Volumen: int = Field(..., description= "Volumen de transaccion")
     SMA_20: Optional[float] = Field(None, description="Media Móvil Simple de 20 días")
     Banda_Superior: Optional[float] = Field(None, description="Banda Superior de Bollinger")
@@ -181,6 +184,9 @@ class PrecioHistoricoOut(BaseModel):
 class PrecioGraficoOut(BaseModel):
     Fecha: date
     PrecioCierre: float
+    PrecioApertura: Optional[float] = None
+    PrecioMaximo: Optional[float] = None
+    PrecioMinimo: Optional[float] = None
     SMA_20: Optional[float] = None
     Banda_Superior: Optional[float] = None
     Banda_Inferior: Optional[float] = None
